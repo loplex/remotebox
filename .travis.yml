@@ -1,6 +1,6 @@
 os: linux
-sudo: false
-dist: cosmic
+#sudo: false
+#dist: cosmic
 
 addons:
   apt:
@@ -12,8 +12,10 @@ script:
     - cd './build/remotebox'
     - dpkg -l
     - sudo apt install fakeroot
+    - sudo apt update
+    - sudo apt install fakeroot
     - dpkg-buildpackage -us -uc
-    - find -print0 |xargs ls -ld
+    - find -print0 |xargs -0 ls -ld
     #- ls -alhR
     - ls -l ..
 
