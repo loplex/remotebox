@@ -1,0 +1,11 @@
+os: linux
+sudo: false
+dist: cosmic
+
+script:
+    - sh -c 'srcs="$(ls -1A)" && mkdir -p "./build/remotebox" && mv ${srcs} "./build/remotebox/"'
+    - cd './build/remotebox'
+    - dpkg-buildpackage -us -uc 
+    - ls -alhR
+    - ls -l ..
+
