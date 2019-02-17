@@ -24,7 +24,8 @@ Usage:
 USAGE
     exit 0;
 }
-elsif ($cmdopts{H}) { &show_dialog_connect('AUTO'); }
+elsif ($cmdopts{H}) { &show_dialog_connect('CMDAUTO'); } # Command line parameter based login
+elsif ($prefs{AUTOCONNPROF}) { &show_dialog_connect('PROFAUTO'); } # Profile based automatic login
 
 $0 = 'RemoteBox VirtualBox Client';
 Gtk2->main;
@@ -40,7 +41,7 @@ sub quit_remotebox {
     $gui{menuitemFloppy}->set_submenu($gui{menutmp1});
     $gui{menuitemDVD}->set_submenu($gui{menutmp2});
     $gui{menuitemUSB}->set_submenu($gui{menutmp3});
-    Gtk2->main_quit; # Supposedly deprecated but segfaults on newer systems if just exit is used
+    Gtk2->main_quit;
 }
 
 # Attempts to logon or fails with a dialog
@@ -110,13 +111,30 @@ sub show_dialog_connect {
 
     # Check if a command line automatic login has been requested. We do this here
     # to try an ensure that a cmdline login is as close as possible to a GUI login
-    if ($widget eq 'AUTO') {
+    if ($widget eq 'CMDAUTO') {
         $gui{entryConnectURL}->set_text($cmdopts{H});
         $gui{entryConnectUser}->set_text($cmdopts{u}) if ($cmdopts{u});
         $gui{entryConnectPassword}->set_text($cmdopts{p}) if ($cmdopts{p});
 
         $response = 'ok';
-        &addrow_log("Attempting automatic login to $endpoint");
+        &addrow_log("Attempting a command line based automatic login to $endpoint");
+    }
+    elsif ($widget eq 'PROFAUTO') {
+        my $model = $gui{treeviewConnectionProfiles}->get_model();
+        my $iter = $model->get_iter_first();
+
+        while($iter) {
+            my @row = $model->get($iter);
+            if ($row[0] eq $prefs{AUTOCONNPROF}) {
+                $gui{entryConnectURL}->set_text($row[1]);
+                $gui{entryConnectUser}->set_text($row[2]);
+                $gui{entryConnectPassword}->set_text($row[3]);
+                $response = 'ok';
+                &addrow_log("Attempting a profile based automatic login to $endpoint");
+                last;
+            }
+            $iter = $model->iter_next($iter);
+        }
     }
     else {
         # Normal GUI login
@@ -147,19 +165,29 @@ sub show_dialog_connect {
                 &virtualbox_logoff();
             }
             else {
-                my $ISystemProperties = IVirtualBox_getSystemProperties($gui{websn});
                 &addrow_log("Logged onto $endpoint");
                 &addrow_log("Running VirtualBox $ver.");
-                &show_err_msg('vboxver', "\nDetected VirtualBox Version: $ver") if ($ver !~ m/^5.1/);
-                &show_err_msg('noextensions') if (ISystemProperties_getDefaultVRDEExtPack($ISystemProperties) !~ m/Oracle VM VirtualBox Extension Pack/i);
-                &fill_list_guest();
-                &sens_connect(1);
+                my $vhost = &vhost();
+                &show_err_msg('vboxver', "Detected VirtualBox Version: $ver") if ($ver !~ m/^5.2/);
+
+                if ($$vhost{vrdeextpack} =~ m/Oracle VM VirtualBox Extension Pack/i) { $gui{toolbuttonRemoteDisplay}->set_label('_Guest Display (RDP)'); }
+                elsif ($$vhost{vrdeextpack} =~ m/vnc/i) {
+                    $gui{toolbuttonRemoteDisplay}->set_label('_Guest Display (VNC)');
+                    &addrow_log("WARNING: The Oracle VirtualBox Extension Pack is not installed.\nSome features may be unavailable.\nThis pack is only available for Linux, Windows, Solaris and MacOS X");
+                }
+                else {
+                    $gui{toolbuttonRemoteDisplay}->set_label('Guest Display Unavailable');
+                    &show_err_msg('noextensions');
+                }
 
                 if ($prefs{ADDADDITIONS}) {
                     &addrow_log('Adding Guest Additions ISO to VMM.');
-                    my $additions = IVirtualBox_openMedium($gui{websn}, ISystemProperties_getDefaultAdditionsISO($ISystemProperties), 'DVD', 'ReadOnly', 'false');
-                    if (!defined($additions)) { &addrow_log('Warning: Could not add additions to VMM'); }
+                    my $additions = IVirtualBox_openMedium($gui{websn}, $$vhost{additionsiso}, 'DVD', 'ReadOnly', 'false') if ($$vhost{additionsiso});
+                    if (!defined($additions)) { &addrow_log('WARNING: Could not automatically add guest additions ISO to VMM.'); }
                 }
+
+                &fill_list_guest();
+                &sens_connect(1);
             }
         }
     }
@@ -207,7 +235,7 @@ sub show_dialog_log {
 sub show_dialog_exportappl {
     my $gref = &getsel_list_guest();
     my $vhost = &vhost();
-    my $fname = &rcatdir($$vhost{machinedir}, $$gref{Name} . '.ova');
+    my $fname = &rcatdir($$vhost{machinedir}, $$gref{Name});
     $gui{entryExportApplFile}->set_text($fname);
     $gui{entryExportApplName}->set_text($$gref{Name});
     $gui{textbufferExportApplDescription}->set_text(IMachine_getDescription($$gref{IMachine}));
@@ -246,8 +274,7 @@ sub show_dialog_exportappl {
             elsif (!$gui{entryExportApplName}->get_text()) { &show_err_msg('invalidname'); }
             else {
                 $gui{dialogExportAppl}->hide;
-                my $location = $gui{entryExportApplFile}->get_text();
-                $location .= '.ova' if ($location !~ m/.ovf$/i and $location !~ m/.ova$/i);
+                my $location = $gui{entryExportApplFile}->get_text() . &getsel_combo($gui{comboboxExportApplFormat}, 2);
                 my $IAppliance = IVirtualBox_createAppliance($gui{websn});
 
                 foreach my $key (keys(%used_key_ids)) {
@@ -358,7 +385,7 @@ sub stop_guest_poweroff {
             &addrow_log("Sent power off signal to $$gref{Name}.");
 
         }
-        else { &addrow_log("Warning: Could not send power off signal to $$gref{Name}."); }
+        else { &addrow_log("WARNING: Could not send power off signal to $$gref{Name}."); }
     }
 
     # At this point the guest may have saved its state and the session lock automatically released
@@ -391,7 +418,7 @@ sub stop_guest_savestate {
             &fill_list_guest();
             &addrow_log("Saved the execution state of $$gref{Name}.");
         }
-        else { &addrow_log("Warning: Could not save the execution state of $$gref{Name}."); }
+        else { &addrow_log("WARNING: Could not save the execution state of $$gref{Name}."); }
     }
 
     # At this point the guest may have save its state and the session lock automatically released
@@ -570,6 +597,7 @@ sub take_snapshot {
 
 # Attempts to open the remote display by calling the RDP client
 sub open_remote_display {
+    my $vhost = &vhost();
     my $gref = &getsel_list_guest();
     my $sref = &get_session($$gref{IMachine});
 
@@ -584,20 +612,22 @@ sub open_remote_display {
         }
 
         if ($$IVRDEServerInfo{port} > 0) {
-            my $rdpcmd = $prefs{RDPCLIENT};
+            my $dispcmd = $prefs{RDPCLIENT};
+            $dispcmd = $prefs{VNCCLIENT} if ($$vhost{vrdeextpack} =~ m/vnc/i);
+
             my ($user, $pass) = ($gui{entryConnectUser}->get_text(), $gui{entryConnectPassword}->get_text());
             my $dst = $endpoint;
             $dst =~ s/^.*:\/\///;
             $dst =~ s/:\d+$//;
-            $rdpcmd =~ s/%h/$dst/g;
-            $rdpcmd =~ s/%p/$$IVRDEServerInfo{port}/g;
-            $rdpcmd =~ s/%n/$$gref{Name}/g;
-            $rdpcmd =~ s/%o/$$gref{Os}/g;
-            $rdpcmd =~ s/%U/$user/g;
-            $rdpcmd =~ s/%P/$pass/g;
-            $rdpcmd =~ s/%X/$prefs{AUTOHINTDISPX}/g;
-            $rdpcmd =~ s/%Y/$prefs{AUTOHINTDISPY}/g;
-            $rdpcmd =~ s/%D/$prefs{AUTOHINTDISPD}/g;
+            $dispcmd =~ s/%h/$dst/g;
+            $dispcmd =~ s/%p/$$IVRDEServerInfo{port}/g;
+            $dispcmd =~ s/%n/$$gref{Name}/g;
+            $dispcmd =~ s/%o/$$gref{Os}/g;
+            $dispcmd =~ s/%U/$user/g;
+            $dispcmd =~ s/%P/$pass/g;
+            $dispcmd =~ s/%X/$prefs{AUTOHINTDISPX}/g;
+            $dispcmd =~ s/%Y/$prefs{AUTOHINTDISPY}/g;
+            $dispcmd =~ s/%D/$prefs{AUTOHINTDISPD}/g;
 
             if ($prefs{AUTOHINTDISP}) {
                 my $IConsole = ISession_getConsole($$sref{ISession});
@@ -605,7 +635,9 @@ sub open_remote_display {
                 &addrow_log("Sent video hint ($prefs{AUTOHINTDISPX}x$prefs{AUTOHINTDISPY}:$prefs{AUTOHINTDISPD}) to $$gref{Name}.");
             }
 
-            system("$rdpcmd &");
+            ($^O =~ m/MSWin/) ? $dispcmd .= ' >nul' : $dispcmd .= ' &';
+            system("$dispcmd");
+            &addrow_log("Calling: $dispcmd");
             &addrow_log("Request to open remote display for $$gref{Name} at address $dst:$$IVRDEServerInfo{port}");
         }
         else { &show_err_msg('remotedisplay', " ($$gref{Name})"); }
@@ -993,6 +1025,21 @@ sub keyboard_CAD {
     ISession_unlockMachine($$sref{ISession}) if (ISession_getState($$sref{ISession}) eq 'Locked');
 }
 
+# Attempts to release any pressed keys if the host and the guest become out of sync
+sub keyboard_releasekeys {
+    my ($widget) = @_;
+    my $gref = &getsel_list_guest();
+    my $sref = &get_session($$gref{IMachine});
+
+    if ($$sref{IMachine}) {
+        my $IKeyboard = IConsole_getKeyboard(ISession_getConsole($$sref{ISession}));
+        IKeyboard_releaseKeys($IKeyboard);
+        &addrow_log("Keyboard release keys to $$gref{Name}.");
+    }
+
+    ISession_unlockMachine($$sref{ISession}) if (ISession_getState($$sref{ISession}) eq 'Locked');
+}
+
 sub keyboard_send {
     my ($widget) = @_;
     my $gref = &getsel_list_guest();
@@ -1362,7 +1409,7 @@ sub screenshot_to_icon {
                 &fill_list_guest();
                 &addrow_log("Configured screenshot as icon for $$gref{Name}.");
             }
-            else { &addrow_log("Warning: Could not save icon for $$gref{Name}."); }
+            else { &addrow_log("WARNING: Could not save icon for $$gref{Name}."); }
         }
         else { &show_err_msg('noscreenshot'); }
     }

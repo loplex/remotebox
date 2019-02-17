@@ -66,10 +66,10 @@ our (%gui);
                           'The medium could not be released from at least one guest.' .
                           ' This is because the guest is currently in use.',
                           'warning'],
-        noextensions  => ['Oracle VM VirtualBox Extension Pack',
-                          'This server does not have the Oracle Extension Pack installed or the pack is outdated. ' .
-                          'Download the pack and install it on this server.' .
-                          " RemoteBox will continue but may not work as expected.\n" .
+        noextensions  => ['VirtualBox Extension Pack',
+                          'This server does not have the Oracle VirtualBox Extension Pack or VNC Extension Pack installed. ' .
+                          'You should install the Oracle Extension Pack if available for your OS, otherwise ' .
+                          "install the VNC extension pack." .
                           '    See URL: http://www.virtualbox.org/wiki/Downloads',
                           'warning'],
         noscreenshot  => ['Screenshot Failed',
@@ -110,10 +110,10 @@ our (%gui);
                           "you will need to reconnect.\n\n",
                           'error'],
         vboxver       => ['Unsupported VirtualBox Version',
-                          'This version of RemoteBox is not intended for use with the version of VirtualBox running on the' .
-                          " server.\nVisit http://remotebox.knobgoblin.org.uk and download an appropriate version of RemoteBox. " .
-                          "RemoteBox will continue, but you may experience failures and loss of functionality.\n" .
-                          'Supported VirtualBox Version: 5.1.x',
+                          'This version of RemoteBox is not supported with the version of VirtualBox on the' .
+                          " server.\nVisit http://remotebox.knobgoblin.org.uk to download a compatible version of RemoteBox.\n" .
+                          "RemoteBox will continue, but you may experience problems due to incompatibilities.\n\n" .
+                          'Supported VirtualBox Version: 5.2.x',
                           'warning'],
         webservice    => ['VirtualBox Returned an Error',
                           '',

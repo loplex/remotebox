@@ -185,7 +185,7 @@ sub show_vmm_modify {
 }
 
 # Displays the copy HD medium window
-sub show_vmm_copy {
+sub show_dialog_vmm_copy {
     my $hdref = &getsel_list_vmmhd();
     my $newdiskname = $$hdref{Name};
     $newdiskname =~ s/\.vdi$//i;
@@ -208,19 +208,27 @@ sub show_vmm_copy {
             if (!$gui{entryCopyHDName}->get_text()) { &show_err_msg('invalidname', '(New Disk Name)'); }
             else {
                 $gui{dialogCopyHD}->hide();
-                my ($vol, $dir, undef) = &rsplitpath($$hdref{Location});
-
-                &show_remotefilechooser_window({title     => "Save disk image on $endpoint",
-                                                basedir   => $vol . $dir,
-                                                filename  => $gui{entryCopyHDName}->get_text(),
-                                                mode      => 'file',
-                                                filter    => ' ^', # Allow any file
-                                                handler   => \&handle_copyhdfilechooser});
+                &show_copyhdfilechooser();
             }
         }
         else { $gui{dialogCopyHD}->hide(); }
 
     } until (!$gui{dialogCopyHD}->visible());
+}
+
+
+# Sets up the file chooser for the destination hd copy
+{
+    my $startloc = $gui{entryVBPrefsGenMachineFolder}->get_text();
+
+    sub show_copyhdfilechooser {
+        $startloc = &show_remotefilechooser_window({title     => "Save disk image on $endpoint",
+                                                    basedir   => $startloc,
+                                                    filename  => $gui{entryCopyHDName}->get_text(),
+                                                    mode      => 'file',
+                                                    filter    => ' ^', # Allow any file
+                                                    handler   => \&handle_copyhdfilechooser});
+    }
 }
 
 # Handles the copying and converting of hard disks after the location is chosen

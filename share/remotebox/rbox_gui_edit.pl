@@ -115,6 +115,10 @@ sub show_dialog_edit {
             $gui{buttonEditCancel}->hide();
         }
 
+        # Extradata doesn't get discarded on a cancel so we backup here and manually restore.
+        my $floppya = IMachine_getExtraData($vmc{IMachine}, 'VBoxInternal/Devices/i82078/0/LUN#0/Config/Type');
+        my $floppyb = IMachine_getExtraData($vmc{IMachine}, 'VBoxInternal/Devices/i82078/0/LUN#1/Config/Type');
+
         my $response = $gui{dialogEdit}->run;
         $gui{dialogEdit}->hide;
 
@@ -161,6 +165,9 @@ sub show_dialog_edit {
         }
         else {
             IMachine_discardSettings($vmc{IMachine});
+            # Restore the floppy drive types as discardSettings does not do this. But only IF there's a setting as the floppy drive may have been deleted already and explicitly saved
+            IMachine_setExtraData($vmc{IMachine}, 'VBoxInternal/Devices/i82078/0/LUN#0/Config/Type', $floppya) if (IMachine_getExtraData($vmc{IMachine}, 'VBoxInternal/Devices/i82078/0/LUN#0/Config/Type'));
+            IMachine_setExtraData($vmc{IMachine}, 'VBoxInternal/Devices/i82078/0/LUN#1/Config/Type', $floppyb) if (IMachine_getExtraData($vmc{IMachine}, 'VBoxInternal/Devices/i82078/0/LUN#1/Config/Type'));
             &addrow_log("Discarded changed settings for $$gref{Name}.");
         }
 

@@ -241,6 +241,7 @@ sub create_new_clone {
 sub create_new_guest {
     my ($newref) = @_;
     my $osver = &osver();
+    my $vhost = &vhost();
     my %os = %{ $$osver{$$newref{ver}} };
     my $dvdctrname = $os{recommendedDVDStorageBus};
     my $hdctrname = $os{recommendedHDStorageBus};
@@ -268,6 +269,7 @@ sub create_new_guest {
         IAudioAdapter_setAudioController($IAudioAdapter, $os{recommendedAudioController});
         IAudioAdapter_setAudioDriver($IAudioAdapter, 'Null');
         IAudioAdapter_setEnabled($IAudioAdapter, 1);
+        IAudioAdapter_setEnabledOut($IAudioAdapter, 1);
 
         my $IStorCtrFloppy = IMachine_addStorageController($IMachine, $floppyctrname, 'Floppy') if ($floppyctrname);
         my $IStorCtrDVD = IMachine_addStorageController($IMachine, $dvdctrname, $os{recommendedDVDStorageBus});
@@ -286,7 +288,8 @@ sub create_new_guest {
         }
 
         IVRDEServer_setVRDEProperty($IVRDEServer, 'VideoChannel/Quality', 75);
-        IVRDEServer_setVRDEProperty($IVRDEServer, 'TCP/Ports', $prefs{DEFRDPPORTS});
+        if ($$vhost{vrdeextpack} =~ m/vnc/i) { IVRDEServer_setVRDEProperty($IVRDEServer, 'TCP/Ports', $prefs{DEFVNCPORTS}) }
+        else { IVRDEServer_setVRDEProperty($IVRDEServer, 'TCP/Ports', $prefs{DEFRDPPORTS}); }
         IVRDEServer_setEnabled($IVRDEServer, 'true');
         IVRDEServer_setAllowMultiConnection($IVRDEServer, 'true');
         IMachine_saveSettings($IMachine);

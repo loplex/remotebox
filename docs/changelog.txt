@@ -1,3 +1,47 @@
+2.5 (29 Apr 2018)
+-----------------
+
+- RemoteBox now only pops up a VirtualBox Extensions warning dialog on login,
+  for server operating systems that have them available but the extension pack
+  is not installed. Currently this is Linux, Solaris, Windows and MacOS X.
+  Others such as FreeBSD will just get a warning in the message log as there
+  are no VirtualBox extensions.
+- Added support for setting the Audio driver of a guest when using a FreeBSD
+  server
+- Improved the code which automatically adds the guest addition ISO to the VMM
+  on login which should prevent an error if the server does not provide a guest
+  additions ISO
+- Added support for VNC. If your server has the VNC extension pack installed,
+  you can use VNC to connect to the guest displays instead of RDP. You must
+  install a VNC client on your RemoteBox machine and configured it as
+  appropriate in your preferences. TigerVNC is the default client
+- The guest display icon now shows whether the server expects a VNC or RDP
+  connection when opening the display of guests.
+- Added option to change the floppy drive type to 360k, 720k, 1.44MB, 2.88MB
+  15.6MB and 63.5MB.
+- Added a button to assist with the automatic generation of serial port paths
+- Fixed a bug causing the port path setting to be reset with the defaults
+- Fixed audio support for Solaris servers. The SolAudio driver is non
+  functional in VirtualBox and has been replaced with OSS.
+
+2.4 (4 Nov 2017)
+----------------
+
+- RemoteBox now requires VirtualBox 5.2.x
+- Updated guest icons
+- Added option to enable/disable audio output from a guest
+- Added option to enable/disable audio input to a guest
+- Added option to record audio from the guest when capturing a video
+- Added support for exporting appliances to Oracle Public Cloud Format 1.0
+- Added ability to select a connection profile to use for automatically logging
+  in when starting up RemoteBox.
+- Added option 'Release Keys' to clear any held keys in the case where a host
+  and guest's keyboard status may become out of sync.
+- New guests now automatically have their audio output enabled
+- Fixed: You now can't set video RAM to zero, even though VirtualBox reports
+  this as a valid minimum, the guest won't start.
+
+
 2.3 (5 May 2017)
 ----------------
 

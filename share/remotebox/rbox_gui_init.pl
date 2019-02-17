@@ -266,7 +266,6 @@ sub handle_importapplfilechooser {
     $gui{entryImportApplFile}->set_text(&rcatfile($basedir, $filename)) if ($basedir and $filename);
 }
 
-
 # Sets up the file chooser for selecting a BMP files
 sub show_bioslogofilechooser {
     my ($vol, $dir, $file) = &rsplitpath($gui{entryEditSysLogoPath}->get_text());
@@ -278,7 +277,6 @@ sub show_bioslogofilechooser {
                                     filter    => '^.*\.bmp$', # To only show bmp files
                                     handler   => \&handle_bioslogofilechooser});
 }
-
 
 # Sets up the file chooser for selecting the video file directory
 sub show_videofilechooser {
@@ -332,7 +330,7 @@ sub show_exportapplfilechooser {
     }
 }
 
-# Sets up the file chooser for selecting a medium (or any file actually)
+# Sets up the file chooser for selecting a medium
 {
     my $startloc = $gui{entryVBPrefsGenMachineFolder}->get_text();
 

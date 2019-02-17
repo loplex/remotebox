@@ -694,6 +694,8 @@ sub onsel_list_editstorage {
         $gui{checkbuttonEditStorLive}->hide();
         $gui{checkbuttonEditStorControllerBootable}->show();
         $gui{labelEditStorPortCount}->hide();
+        $gui{labelEditStorFloppyType}->hide();
+        $gui{comboboxEditStorFloppyType}->hide();
         $gui{menuitemAttachHD}->set_sensitive(1);
         $gui{menuitemAttachDVD}->set_sensitive(1);
         $gui{menuitemAttachFloppy}->set_sensitive(0);
@@ -701,6 +703,7 @@ sub onsel_list_editstorage {
         $gui{entryEditStorCtrName}->set_text($$storref{ControllerName});
         $gui{checkbuttonEditStorCache}->set_active(&bl(IStorageController_getUseHostIOCache($$storref{IStorageController})));
         $gui{checkbuttonEditStorControllerBootable}->set_active(&bl(IStorageController_getBootable($$storref{IStorageController})));
+
         my $variant = IStorageController_getControllerType($$storref{IStorageController});
 
         if ($$storref{Bus} eq 'IDE') { $gui{comboboxEditStorCtrType}->set_model($gui{liststoreEditStorIDECtrType}); }
@@ -753,6 +756,8 @@ sub onsel_list_editstorage {
         $gui{labelEditStorDevPort}->show();
         $gui{comboboxEditStorDevPort}->show();
         $gui{labelEditStorPortCount}->hide();
+        $gui{labelEditStorFloppyType}->hide();
+        $gui{comboboxEditStorFloppyType}->hide();
         $gui{menuitemAttachHD}->set_sensitive(0);
         $gui{menuitemAttachDVD}->set_sensitive(0);
         $gui{menuitemAttachFloppy}->set_sensitive(0);
@@ -770,6 +775,16 @@ sub onsel_list_editstorage {
             else { $gui{checkbuttonEditStorHotPluggable}->hide(); }
         }
         elsif ($$storref{MediumType} eq 'Floppy') {
+            $gui{labelEditStorFloppyType}->show();
+            $gui{comboboxEditStorFloppyType}->show();
+            my $fdrivetype = IMachine_getExtraData($vmc{IMachine}, 'VBoxInternal/Devices/i82078/0/LUN#' . $$storref{Device} . '/Config/Type');
+            if ($fdrivetype eq 'Floppy 360') { $gui{comboboxEditStorFloppyType}->set_active(0); }
+            elsif ($fdrivetype eq 'Floppy 720') { $gui{comboboxEditStorFloppyType}->set_active(1); }
+            elsif ($fdrivetype eq 'Floppy 1.20') { $gui{comboboxEditStorFloppyType}->set_active(2); }
+            elsif ($fdrivetype eq 'Floppy 2.88') { $gui{comboboxEditStorFloppyType}->set_active(4); }
+            elsif ($fdrivetype eq 'Floppy 15.6') { $gui{comboboxEditStorFloppyType}->set_active(5); }
+            elsif ($fdrivetype eq 'Floppy 63.5') { $gui{comboboxEditStorFloppyType}->set_active(6); }
+            else { $gui{comboboxEditStorFloppyType}->set_active(3); } # Everything else is 1.44MB
             $gui{menuitemAttachFloppy}->set_sensitive(1);
         }
         else { # Default to HD
@@ -1559,6 +1574,8 @@ sub onsel_list_shared {
         $gui{entryPrefsConnectionProfileURL}->set_text($selected{URL});
         $gui{entryPrefsConnectionProfileUsername}->set_text($selected{Username});
         $gui{entryPrefsConnectionProfilePassword}->set_text($selected{Password});
+        $gui{checkbuttonConnectionProfileAutoConnect}->set_active(1) if ($selected{Name} eq $prefs{AUTOCONNPROF});
+        $gui{checkbuttonConnectionProfileAutoConnect}->set_active(0) if ($selected{Name} ne $prefs{AUTOCONNPROF});
         $gui{buttonPrefsConnectionProfileDelete}->set_sensitive(1);
         $gui{tablePrefsProfile}->set_sensitive(1);
     }
@@ -1598,16 +1615,25 @@ sub onsel_list_shared {
         $gui{liststoreProfiles}->set_value($iter, 1, $gui{entryPrefsConnectionProfileURL}->get_text()) if ($iter);
     }
 
-        sub profile_username_change {
+    sub profile_username_change {
         my $model = $gui{treeviewConnectionProfiles}->get_model();
         my $iter = $gui{treeviewConnectionProfiles}->get_selection->get_selected();
         $gui{liststoreProfiles}->set_value($iter, 2, $gui{entryPrefsConnectionProfileUsername}->get_text()) if ($iter);
     }
 
-        sub profile_password_change {
+    sub profile_password_change {
         my $model = $gui{treeviewConnectionProfiles}->get_model();
         my $iter = $gui{treeviewConnectionProfiles}->get_selection->get_selected();
         $gui{liststoreProfiles}->set_value($iter, 3, $gui{entryPrefsConnectionProfilePassword}->get_text()) if ($iter);
+    }
+
+    sub profile_autoconn_change {
+        my $state = $gui{checkbuttonConnectionProfileAutoConnect}->get_active();
+        if ($state) { $prefs{AUTOCONNPROF} = $gui{entryPrefsConnectionProfileName}->get_text(); }
+        else {
+            # Only clear it, if the profilename matches the auto connection name
+            $prefs{AUTOCONNPROF} = '' if ( $prefs{AUTOCONNPROF} eq $gui{entryPrefsConnectionProfileName}->get_text() );
+        }
     }
 
 }

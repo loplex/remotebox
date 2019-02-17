@@ -139,7 +139,7 @@ sub show_dialog_createhd {
                 if ($IMedium) {
                     &storage_attach_hd(undef, $IMedium);
                     IMachine_saveSettings($vmc{IMachine});
-                    &addrow_log("Settings implicitly saved for $vmc{Name} due to storage attachment.");
+                    &addrow_log("Settings explicitly saved for $vmc{Name} due to storage attachment.");
                 }
             }
         }
@@ -194,9 +194,6 @@ sub storage_ctr_add {
 
     if (!$exists) {
         my $IStorageController = IMachine_addStorageController($vmc{IMachine}, $ctrname, $bus);
-        # This works around the controller type defaults defaulting to USB. VB itself doesn't seem to use it.
-        if ($bus eq 'SAS') { IStorageController_setControllerType($IStorageController, 'LsiLogicSas', 0); }
-
         IStorageController_setPortCount($IStorageController, IStorageController_getMinPortCount($IStorageController)); # Controllers have all ports on by default. Set to the minimum
         &fill_list_editstorage($vmc{IMachine});
     }
@@ -219,7 +216,7 @@ sub storage_attach_hd {
     if (!$attached) { &show_err_msg('ctrfull'); }
 
     IMachine_saveSettings($vmc{IMachine});
-    &addrow_log("Settings implicitly saved for $vmc{Name} due to storage attachment.");
+    &addrow_log("Settings explicitly saved for $vmc{Name} due to storage attachment.");
     &fill_list_editstorage($vmc{IMachine});
 }
 
@@ -244,7 +241,7 @@ sub storage_attach_dvd {
     }
 
     IMachine_saveSettings($vmc{IMachine});
-    &addrow_log("Settings implicitly saved for $vmc{Name} due to storage attachment.");
+    &addrow_log("Settings explicitly saved for $vmc{Name} due to storage attachment.");
     &fill_list_editstorage($vmc{IMachine});
 }
 
@@ -268,7 +265,7 @@ sub storage_attach_floppy {
     }
 
     IMachine_saveSettings($vmc{IMachine});
-    &addrow_log("Settings implicitly saved for $vmc{Name} due to storage attachment.");
+    &addrow_log("Settings explicitly saved for $vmc{Name} due to storage attachment.");
     &fill_list_editstorage($vmc{IMachine});
 }
 
@@ -279,7 +276,11 @@ sub storage_attach_rem {
     if ((($$storref{MediumType} eq 'Floppy') or ($$storref{MediumType} eq 'DVD')) and $$storref{IMedium}) {
         IMachine_mountMedium($vmc{IMachine}, $$storref{ControllerName}, $$storref{Port}, $$storref{Device}, '');
     }
-    else { IMachine_detachDevice($vmc{IMachine}, $$storref{ControllerName}, $$storref{Port}, $$storref{Device}); }
+    else {
+        # We must reset the extradata for a floppy drive if the drive is deleted otherwise the VM won't start
+        IMachine_setExtraData($vmc{IMachine}, 'VBoxInternal/Devices/i82078/0/LUN#' . $$storref{Device} . '/Config/Type', '') if ($$storref{MediumType} eq 'Floppy');
+        IMachine_detachDevice($vmc{IMachine}, $$storref{ControllerName}, $$storref{Port}, $$storref{Device});
+    }
 
     &fill_list_editstorage($vmc{IMachine});
 }
@@ -299,6 +300,12 @@ sub storage_ctr_rem {
 sub storage_ctrtype {
     my $storref = &getsel_list_editstorage();
     IStorageController_setControllerType($$storref{IStorageController}, &getsel_combo($gui{comboboxEditStorCtrType}, 0));
+}
+
+# Sets the floppy drive type
+sub storage_floppy_type {
+    my $storref = &getsel_list_editstorage();
+    IMachine_setExtraData($vmc{IMachine}, 'VBoxInternal/Devices/i82078/0/LUN#' . $$storref{Device} . '/Config/Type', &getsel_combo($gui{comboboxEditStorFloppyType}, 0));
 }
 
 # Set / Clear the host I/O cache for the controller
@@ -368,16 +375,24 @@ sub storage_connected_port {
         }
 
         if ($free) {
-            # SATA, SAS, NVMe support changing the ports
+            # SATA, SAS, NVMe support changing the port counts
             if ($$storref{Bus} eq 'SATA' or $$storref{Bus} eq 'SAS' or $$storref{Bus} eq 'PCIe') {
-            if (IStorageController_getPortCount($$storref{IStorageController}) < ($newport + 1)) {
-                IStorageController_setPortCount($$storref{IStorageController}, $newport + 1) ;
+                if (IStorageController_getPortCount($$storref{IStorageController}) < ($newport + 1)) {
+                    IStorageController_setPortCount($$storref{IStorageController}, $newport + 1) ;
+                }
             }
+
+            # We must ensure the extradata is cleared and set again when the drive port changes or the VM may not start
+            if ($$storref{Bus} eq 'Floppy') {
+                IMachine_setExtraData($vmc{IMachine}, 'VBoxInternal/Devices/i82078/0/LUN#' . $$storref{Device} . '/Config/Type', ''); # Clear the old one
+                IMachine_setExtraData($vmc{IMachine}, 'VBoxInternal/Devices/i82078/0/LUN#' . $newdevice . '/Config/Type', &getsel_combo($gui{comboboxEditStorFloppyType}, 0)); # set the new one
             }
+
             IMachine_detachDevice($vmc{IMachine}, $$storref{ControllerName}, $$storref{Port}, $$storref{Device});
             IMachine_attachDevice($vmc{IMachine}, $$storref{ControllerName}, $newport, $newdevice, $$storref{MediumType}, $$storref{IMedium});
             IMachine_saveSettings($vmc{IMachine});
-            &addrow_log("Settings implicitly saved for $vmc{Name} due to storage attachment.");
+            &addrow_log("Settings explicitly saved for $vmc{Name} due to storage attachment.");
+
             &fill_list_editstorage($vmc{IMachine});
         }
     }

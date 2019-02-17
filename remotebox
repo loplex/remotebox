@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 # ^^^ You may need to change this to the location of your perl interpreter
-# RemoteBox v2.3 (c) 2010-2017 Ian Chapman. Licenced under the terms of the GPL
+# RemoteBox v2.4 (c) 2010-2017 Ian Chapman. Licenced under the terms of the GPL
 use strict;
 use warnings;
 use FindBin qw($Bin);

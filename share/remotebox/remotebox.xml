@@ -9,14 +9,14 @@
     <property name="icon">icons/remotebox.png</property>
     <property name="type_hint">dialog</property>
     <property name="program_name">RemoteBox</property>
-    <property name="version">2.3</property>
-    <property name="copyright">RemoteBox (ex. artwork) Copyright © 2010-2017 Ian Chapman
+    <property name="version">2.5</property>
+    <property name="copyright">RemoteBox (ex. artwork) Copyright © 2010-2018 Ian Chapman
 RemoteBox is not affiliated with Oracle.
 All trademarks belong to their respective owners.
 
 If you like RemoteBox or have found it useful, please consider donating.</property>
     <property name="comments" translatable="yes">RemoteBox is a client for managing VirtualBox and its guests over the network.
-For use with VirtualBox 5.1.x</property>
+For use with VirtualBox 5.2.x</property>
     <property name="website">http://remotebox.knobgoblin.org.uk/news.cgi</property>
     <property name="website_label" translatable="yes">Donate or visit the RemoteBox site</property>
     <property name="license" translatable="yes">		    GNU GENERAL PUBLIC LICENSE
@@ -441,7 +441,6 @@ Public License instead of this License.
   <object class="GtkAdjustment" id="adjustmentEditDispVidMem">
     <property name="lower">1</property>
     <property name="upper">256</property>
-    <property name="value">1</property>
     <property name="step_increment">1</property>
     <property name="page_increment">1</property>
   </object>
@@ -1910,6 +1909,69 @@ automatically destroyed.
             <child>
               <placeholder/>
             </child>
+            <child>
+              <placeholder/>
+            </child>
+            <child>
+              <placeholder/>
+            </child>
+            <child>
+              <placeholder/>
+            </child>
+            <child>
+              <placeholder/>
+            </child>
+            <child>
+              <placeholder/>
+            </child>
+            <child>
+              <placeholder/>
+            </child>
+            <child>
+              <placeholder/>
+            </child>
+            <child>
+              <placeholder/>
+            </child>
+            <child>
+              <placeholder/>
+            </child>
+            <child>
+              <placeholder/>
+            </child>
+            <child>
+              <placeholder/>
+            </child>
+            <child>
+              <placeholder/>
+            </child>
+            <child>
+              <placeholder/>
+            </child>
+            <child>
+              <placeholder/>
+            </child>
+            <child>
+              <placeholder/>
+            </child>
+            <child>
+              <placeholder/>
+            </child>
+            <child>
+              <placeholder/>
+            </child>
+            <child>
+              <placeholder/>
+            </child>
+            <child>
+              <placeholder/>
+            </child>
+            <child>
+              <placeholder/>
+            </child>
+            <child>
+              <placeholder/>
+            </child>
           </object>
           <packing>
             <property name="expand">True</property>
@@ -2421,6 +2483,11 @@ automatically destroyed.
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="stock">gtk-orientation-portrait</property>
+  </object>
+  <object class="GtkImage" id="image72">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">icons/keyboard_16px.png</property>
   </object>
   <object class="GtkImage" id="image8">
     <property name="visible">True</property>
@@ -3069,6 +3136,11 @@ automatically destroyed.
     <property name="can_focus">False</property>
     <property name="pixbuf">icons/sf_16px.png</property>
   </object>
+  <object class="GtkImage" id="imageGeneratePortPath">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">icons/refresh_22px.png</property>
+  </object>
   <object class="GtkImage" id="imageGroupExpand16">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
@@ -3237,6 +3309,11 @@ automatically destroyed.
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="pixbuf">icons/rb_settings_16px.png</property>
+  </object>
+  <object class="GtkImage" id="imagePresetRDP1">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="pixbuf">icons/rdp_presets_16px.png</property>
   </object>
   <object class="GtkImage" id="imagePresetRDP16">
     <property name="visible">True</property>
@@ -4110,6 +4187,24 @@ automatically destroyed.
       </row>
     </data>
   </object>
+  <object class="GtkListStore" id="liststoreEditAudioDriverFreeBSD">
+    <columns>
+      <!-- column-name ID -->
+      <column type="gchararray"/>
+      <!-- column-name Description -->
+      <column type="gchararray"/>
+    </columns>
+    <data>
+      <row>
+        <col id="0" translatable="yes">Null</col>
+        <col id="1" translatable="yes">Dummy Audio Driver</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">OSS</col>
+        <col id="1" translatable="yes">Open Sound System (OSS)</col>
+      </row>
+    </data>
+  </object>
   <object class="GtkListStore" id="liststoreEditAudioDriverLin">
     <columns>
       <!-- column-name ID -->
@@ -4181,8 +4276,8 @@ automatically destroyed.
         <col id="1" translatable="yes">Dummy Audio Driver</col>
       </row>
       <row>
-        <col id="0" translatable="yes">SolAudio</col>
-        <col id="1" translatable="yes">Solaris Audio</col>
+        <col id="0" translatable="yes">OSS</col>
+        <col id="1" translatable="yes">Open Sound System (OSS)</col>
       </row>
     </data>
   </object>
@@ -7514,6 +7609,44 @@ automatically destroyed.
       </row>
     </data>
   </object>
+  <object class="GtkListStore" id="liststoreEditStorFloppyType">
+    <columns>
+      <!-- column-name ID -->
+      <column type="gchararray"/>
+      <!-- column-name Description -->
+      <column type="gchararray"/>
+    </columns>
+    <data>
+      <row>
+        <col id="0" translatable="yes">Floppy 360</col>
+        <col id="1" translatable="yes">5¼" 360KB Floppy</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Floppy 720</col>
+        <col id="1" translatable="yes">3½" 720KB Floppy</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Floppy 1.20</col>
+        <col id="1" translatable="yes">5¼" 1.2MB Floppy</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Floppy 1.44</col>
+        <col id="1" translatable="yes">3½" 1.44MB Floppy</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Floppy 2.88</col>
+        <col id="1" translatable="yes">3½" 2.88MB Floppy</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Floppy 15.6</col>
+        <col id="1" translatable="yes">Fake 15.6MB Floppy</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Floppy 63.5</col>
+        <col id="1" translatable="yes">Fake 63.5MB Floppy</col>
+      </row>
+    </data>
+  </object>
   <object class="GtkListStore" id="liststoreEditStorIDECtrType">
     <columns>
       <!-- column-name ID -->
@@ -7897,19 +8030,44 @@ OS has occurred, particularly for Windows guests</property>
       <column type="gchararray"/>
       <!-- column-name Value -->
       <column type="gchararray"/>
+      <!-- column-name Ext -->
+      <column type="gchararray"/>
     </columns>
     <data>
       <row>
-        <col id="0" translatable="yes">OVF 0.9</col>
+        <col id="0" translatable="yes">Open Virtualization Archive 0.9</col>
         <col id="1" translatable="yes">ovf-0.9</col>
+        <col id="2" translatable="yes">.ova</col>
       </row>
       <row>
-        <col id="0" translatable="yes">OVF 1.0</col>
+        <col id="0" translatable="yes">Open Virtualization Format 0.9</col>
+        <col id="1" translatable="yes">ovf-0.9</col>
+        <col id="2" translatable="yes">.ovf</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Open Virtualization Archive 1.0</col>
         <col id="1" translatable="yes">ovf-1.0</col>
+        <col id="2" translatable="yes">.ova</col>
       </row>
       <row>
-        <col id="0" translatable="yes">OVF 2.0</col>
+        <col id="0" translatable="yes">Open Virtualization Format 1.0</col>
+        <col id="1" translatable="yes">ovf-1.0</col>
+        <col id="2" translatable="yes">.ovf</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Open Virtualization Archive 2.0</col>
         <col id="1" translatable="yes">ovf-2.0</col>
+        <col id="2" translatable="yes">.ova</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Open Virtualization Format  2.0</col>
+        <col id="1" translatable="yes">ovf-2.0</col>
+        <col id="2" translatable="yes">.ovf</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Oracle Public Cloud Format 1.0</col>
+        <col id="1" translatable="yes">opc-1.0</col>
+        <col id="2" translatable="yes">.tar.gz</col>
       </row>
     </data>
   </object>
@@ -11246,47 +11404,6 @@ OS has occurred, particularly for Windows guests</property>
                       </packing>
                     </child>
                     <child>
-                      <object class="GtkLabel" id="labelPrefsRDPPorts">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="xalign">1</property>
-                        <property name="label" translatable="yes">Default RDP _Ports:</property>
-                        <property name="use_underline">True</property>
-                        <property name="mnemonic_widget">entryPrefsRDPPorts</property>
-                      </object>
-                      <packing>
-                        <property name="top_attach">2</property>
-                        <property name="bottom_attach">3</property>
-                        <property name="x_options">GTK_FILL</property>
-                        <property name="y_options"/>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkEntry" id="entryPrefsRDPPorts">
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="tooltip_text" translatable="yes">The default RDP Port range to use for new guests
-* If unsure, use 3389-4389</property>
-                        <property name="invisible_char">●</property>
-                        <property name="width_chars">50</property>
-                        <property name="truncate_multiline">True</property>
-                        <property name="invisible_char_set">True</property>
-                        <property name="primary_icon_activatable">False</property>
-                        <property name="secondary_icon_activatable">False</property>
-                        <property name="primary_icon_sensitive">True</property>
-                        <property name="secondary_icon_sensitive">True</property>
-                      </object>
-                      <packing>
-                        <property name="left_attach">1</property>
-                        <property name="right_attach">2</property>
-                        <property name="top_attach">2</property>
-                        <property name="bottom_attach">3</property>
-                        <property name="y_options"/>
-                        <property name="x_padding">5</property>
-                        <property name="y_padding">2</property>
-                      </packing>
-                    </child>
-                    <child>
                       <object class="GtkHBox" id="hboxPrefsDispXH">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
@@ -11417,7 +11534,7 @@ OS has occurred, particularly for Windows guests</property>
                         <property name="can_focus">False</property>
                         <property name="xpad">2</property>
                         <property name="ypad">5</property>
-                        <property name="label" translatable="yes">&lt;small&gt;&lt;b&gt;Server hostname&lt;/b&gt; %h, &lt;b&gt;Guest name&lt;/b&gt; %n, &lt;b&gt;Guest OS&lt;/b&gt; %o, &lt;b&gt;RDP Port&lt;/b&gt; %p,
+                        <property name="label" translatable="yes">&lt;small&gt;&lt;b&gt;Server hostname&lt;/b&gt; %h, &lt;b&gt;Guest name&lt;/b&gt; %n, &lt;b&gt;Guest OS&lt;/b&gt; %o, &lt;b&gt;RDP / VNC Port&lt;/b&gt; %p,
 &lt;b&gt;Password&lt;/b&gt; %P, &lt;b&gt;Username&lt;/b&gt; %U, &lt;b&gt;Auto-Hint Resolution (X, Y, Depth)&lt;/b&gt; %X, %Y, %D&lt;/small&gt;</property>
                         <property name="use_markup">True</property>
                         <property name="justify">center</property>
@@ -11672,96 +11789,6 @@ OS has occurred, particularly for Windows guests</property>
                       <placeholder/>
                     </child>
                     <child>
-                      <placeholder/>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
-                    <child>
-                      <placeholder/>
-                    </child>
-                    <child>
                       <object class="GtkHBox" id="hboxPrefsRDPClient">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
@@ -11793,7 +11820,7 @@ OS has occurred, particularly for Windows guests</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
-                            <property name="tooltip_text" translatable="yes">Select an RDP Client preset, or customize your own command</property>
+                            <property name="tooltip_text" translatable="yes">Select an RDP client preset, or customize your own command</property>
                             <property name="image">imagePresetRDP16</property>
                             <signal name="button-release-event" handler="show_rdppreset_menu" swapped="no"/>
                           </object>
@@ -11814,6 +11841,94 @@ OS has occurred, particularly for Windows guests</property>
                         <property name="x_padding">5</property>
                         <property name="y_padding">2</property>
                       </packing>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="labelPrefsVNCClient">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="xalign">1</property>
+                        <property name="label" translatable="yes">_VNC Client:</property>
+                        <property name="use_underline">True</property>
+                        <property name="mnemonic_widget">entryPrefsRDPClient</property>
+                      </object>
+                      <packing>
+                        <property name="top_attach">2</property>
+                        <property name="bottom_attach">3</property>
+                        <property name="x_options">GTK_FILL</property>
+                        <property name="y_options"/>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkHBox" id="hboxPrefsVNCClient">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <child>
+                          <object class="GtkEntry" id="entryPrefsVNCClient">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="tooltip_text" translatable="yes">The command to call when making VNC connections to guests.
+* Choose a preset or customize your own command
+* Consult the manual for details of % variables substitutions</property>
+                            <property name="invisible_char">●</property>
+                            <property name="width_chars">50</property>
+                            <property name="truncate_multiline">True</property>
+                            <property name="invisible_char_set">True</property>
+                            <property name="primary_icon_activatable">False</property>
+                            <property name="secondary_icon_activatable">False</property>
+                            <property name="primary_icon_sensitive">True</property>
+                            <property name="secondary_icon_sensitive">True</property>
+                          </object>
+                          <packing>
+                            <property name="expand">True</property>
+                            <property name="fill">True</property>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="buttonPrefsVNCClientPreset">
+                            <property name="label" translatable="yes">Presets</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">True</property>
+                            <property name="tooltip_text" translatable="yes">Select a VNC client preset, or customize your own command</property>
+                            <property name="image">imagePresetRDP1</property>
+                            <signal name="button-release-event" handler="show_vncpreset_menu" swapped="no"/>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="fill">False</property>
+                            <property name="padding">5</property>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="right_attach">2</property>
+                        <property name="top_attach">2</property>
+                        <property name="bottom_attach">3</property>
+                        <property name="y_options"/>
+                        <property name="x_padding">5</property>
+                        <property name="y_padding">2</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
                     </child>
                   </object>
                   <packing>
@@ -13915,8 +14030,53 @@ need to release it before modifying its type.</property>
       <object class="GtkMenuItem" id="menuitemrdppreset4">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
+        <property name="label" translatable="yes">KRDC</property>
+        <property name="use_underline">True</property>
+        <signal name="activate" handler="set_rdppreset" swapped="no"/>
+      </object>
+    </child>
+    <child>
+      <object class="GtkMenuItem" id="menuitemrdppreset5">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
         <property name="label" translatable="yes">Windows Remote Desktop Client (mstsc)</property>
         <signal name="activate" handler="set_rdppreset" swapped="no"/>
+      </object>
+    </child>
+  </object>
+  <object class="GtkMenu" id="menuVNCPreset">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <child>
+      <object class="GtkMenuItem" id="menuitemvncpreset1">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="label" translatable="yes">TigerVNC (vncviewer)</property>
+        <signal name="activate" handler="set_vncpreset" swapped="no"/>
+      </object>
+    </child>
+    <child>
+      <object class="GtkMenuItem" id="menuitemvncpreset2">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="label" translatable="yes">RealVNC (vncviewer)</property>
+        <signal name="activate" handler="set_vncpreset" swapped="no"/>
+      </object>
+    </child>
+    <child>
+      <object class="GtkMenuItem" id="menuitemvncpreset3">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="label" translatable="yes">Vinagre</property>
+        <signal name="activate" handler="set_vncpreset" swapped="no"/>
+      </object>
+    </child>
+    <child>
+      <object class="GtkMenuItem" id="menuitemvncpreset4">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="label" translatable="yes">KRDC</property>
+        <signal name="activate" handler="set_vncpreset" swapped="no"/>
       </object>
     </child>
   </object>
@@ -14136,7 +14296,7 @@ need to release it before modifying its type.</property>
                   <object class="GtkTable" id="tableNewg">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="n_rows">4</property>
+                    <property name="n_rows">3</property>
                     <property name="n_columns">2</property>
                     <child>
                       <placeholder/>
@@ -14152,8 +14312,6 @@ need to release it before modifying its type.</property>
                         <property name="mnemonic_widget">entryExportApplFile</property>
                       </object>
                       <packing>
-                        <property name="top_attach">1</property>
-                        <property name="bottom_attach">2</property>
                         <property name="x_options">GTK_FILL</property>
                         <property name="y_options"/>
                         <property name="y_padding">2</property>
@@ -14170,8 +14328,8 @@ need to release it before modifying its type.</property>
                         <property name="mnemonic_widget">comboboxExportApplFormat</property>
                       </object>
                       <packing>
-                        <property name="top_attach">2</property>
-                        <property name="bottom_attach">3</property>
+                        <property name="top_attach">1</property>
+                        <property name="bottom_attach">2</property>
                         <property name="x_options">GTK_FILL</property>
                         <property name="y_options"/>
                         <property name="y_padding">2</property>
@@ -14183,7 +14341,7 @@ need to release it before modifying its type.</property>
                         <property name="can_focus">False</property>
                         <property name="tooltip_text" translatable="yes">The OVF format version</property>
                         <property name="model">liststoreExportApplFormat</property>
-                        <property name="active">1</property>
+                        <property name="active">2</property>
                         <child>
                           <object class="GtkCellRendererText" id="cellrenderertextExportApplFormat"/>
                           <attributes>
@@ -14194,8 +14352,8 @@ need to release it before modifying its type.</property>
                       <packing>
                         <property name="left_attach">1</property>
                         <property name="right_attach">2</property>
-                        <property name="top_attach">2</property>
-                        <property name="bottom_attach">3</property>
+                        <property name="top_attach">1</property>
+                        <property name="bottom_attach">2</property>
                         <property name="y_options"/>
                         <property name="x_padding">5</property>
                         <property name="y_padding">2</property>
@@ -14215,23 +14373,10 @@ need to release it before modifying its type.</property>
                       <packing>
                         <property name="left_attach">1</property>
                         <property name="right_attach">2</property>
-                        <property name="top_attach">3</property>
-                        <property name="bottom_attach">4</property>
+                        <property name="top_attach">2</property>
+                        <property name="bottom_attach">3</property>
                         <property name="y_options"/>
                         <property name="x_padding">5</property>
-                        <property name="y_padding">2</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkLabel" id="labelApplExportExt">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">Use file extension .ovf if you do not want the appliance
-combined into a single Open Virtualization Format Archive</property>
-                      </object>
-                      <packing>
-                        <property name="right_attach">2</property>
-                        <property name="y_options"/>
                         <property name="y_padding">2</property>
                       </packing>
                     </child>
@@ -14280,8 +14425,6 @@ combined into a single Open Virtualization Format Archive</property>
                       <packing>
                         <property name="left_attach">1</property>
                         <property name="right_attach">2</property>
-                        <property name="top_attach">1</property>
-                        <property name="bottom_attach">2</property>
                         <property name="y_options"/>
                         <property name="x_padding">5</property>
                         <property name="y_padding">2</property>
@@ -16983,6 +17126,7 @@ combined into a single Open Virtualization Format Archive</property>
   * Consumes host system memory not graphics card memory</property>
                                 <property name="adjustment">adjustmentEditDispVidMem</property>
                                 <property name="show_fill_level">True</property>
+                                <property name="restrict_to_fill_level">False</property>
                                 <property name="fill_level">1000000</property>
                                 <property name="digits">0</property>
                                 <property name="draw_value">False</property>
@@ -17060,7 +17204,8 @@ combined into a single Open Virtualization Format Archive</property>
                               <object class="GtkHScale" id="hscaleEditDispMonitor">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
-                                <property name="tooltip_text" translatable="yes">The number of virtual monitors assigned to the guest</property>
+                                <property name="tooltip_text" translatable="yes">The number of virtual monitors assigned to the guest
+* Important: RemoteBox only supports connecting to the first display.</property>
                                 <property name="adjustment">adjustmentEditDispMonitor</property>
                                 <property name="restrict_to_fill_level">False</property>
                                 <property name="fill_level">64</property>
@@ -17078,7 +17223,8 @@ combined into a single Open Virtualization Format Archive</property>
                               <object class="GtkSpinButton" id="spinbuttonEditDispMonitor">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
-                                <property name="tooltip_text" translatable="yes">The number of virtual monitors assigned to the guest</property>
+                                <property name="tooltip_text" translatable="yes">The number of virtual monitors assigned to the guest
+* Important: RemoteBox only supports connecting to the first display.</property>
                                 <property name="max_length">2</property>
                                 <property name="invisible_char">●</property>
                                 <property name="width_chars">7</property>
@@ -17236,12 +17382,13 @@ combined into a single Open Virtualization Format Archive</property>
                         <property name="can_focus">False</property>
                         <child>
                           <object class="GtkCheckButton" id="checkbuttonEditDispServer">
-                            <property name="label" translatable="yes">_Enable RDP (Remote Display Server)</property>
+                            <property name="label" translatable="yes">_Enable Remote Display Server (RDP/VNC)</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">False</property>
-                            <property name="tooltip_text" translatable="yes">Enable the RDP server for this guest
-  * Allows remote control and display using an RDP client</property>
+                            <property name="tooltip_text" translatable="yes">Enable the RDP or VNC server for this guest
+* Allows remote control and display using an RDP or VNC client
+* Requires the Oracle or VNC Extension pack to be installed.</property>
                             <property name="use_underline">True</property>
                             <property name="draw_indicator">True</property>
                             <signal name="toggled" handler="disp_toggleRDP" swapped="no"/>
@@ -17279,7 +17426,7 @@ combined into a single Open Virtualization Format Archive</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <property name="xalign">1</property>
-                                <property name="label" translatable="yes">Authentication _Method:</property>
+                                <property name="label" translatable="yes">RDP Authentication _Method:</property>
                                 <property name="use_underline">True</property>
                                 <property name="mnemonic_widget">comboboxDispAuthMeth</property>
                               </object>
@@ -17296,7 +17443,7 @@ combined into a single Open Virtualization Format Archive</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <property name="xalign">1</property>
-                                <property name="label" translatable="yes">Authentication _Timeout:</property>
+                                <property name="label" translatable="yes">RDP Authentication _Timeout:</property>
                                 <property name="use_underline">True</property>
                                 <property name="mnemonic_widget">spinbuttonEditDispAuthTime</property>
                               </object>
@@ -17312,7 +17459,7 @@ combined into a single Open Virtualization Format Archive</property>
                               <object class="GtkEntry" id="entryEditDispPort">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
-                                <property name="tooltip_text" translatable="yes">Port or range of ports the RDP server will use
+                                <property name="tooltip_text" translatable="yes">Port or range of ports the RDP or VNC server will use
   * If unsure, use: 3389-4389</property>
                                 <property name="max_length">128</property>
                                 <property name="invisible_char">●</property>
@@ -17339,7 +17486,7 @@ combined into a single Open Virtualization Format Archive</property>
                               <object class="GtkComboBox" id="comboboxDispAuthMeth">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
-                                <property name="tooltip_text" translatable="yes">RDP authentication method</property>
+                                <property name="tooltip_text" translatable="yes">RDP authentication method. Does not apply to VNC display connections</property>
                                 <property name="model">liststoreDispAuthMeth</property>
                                 <signal name="changed" handler="disp_RDPauth" swapped="no"/>
                                 <child>
@@ -17403,7 +17550,7 @@ combined into a single Open Virtualization Format Archive</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <property name="xalign">1</property>
-                                <property name="label" translatable="yes">_Video Stream Quality:</property>
+                                <property name="label" translatable="yes">RDP _Video Stream Quality:</property>
                                 <property name="use_underline">True</property>
                                 <property name="mnemonic_widget">spinbuttonEditDispQuality</property>
                               </object>
@@ -17420,7 +17567,8 @@ combined into a single Open Virtualization Format Archive</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
                                 <property name="tooltip_text" translatable="yes">Quality of RDP video streams, if your client supports it.
-  * Higher quality uses more bandwidth</property>
+* Higher quality uses more bandwidth
+* Does not apply to VNC connections </property>
                                 <property name="max_length">4</property>
                                 <property name="invisible_char">●</property>
                                 <property name="truncate_multiline">True</property>
@@ -17451,7 +17599,7 @@ combined into a single Open Virtualization Format Archive</property>
                               <object class="GtkSpinButton" id="spinbuttonEditDispAuthTime">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
-                                <property name="tooltip_text" translatable="yes">The authentication timeout value</property>
+                                <property name="tooltip_text" translatable="yes">The authentication timeout value. Does not apply to VNC display connections</property>
                                 <property name="invisible_char">●</property>
                                 <property name="truncate_multiline">True</property>
                                 <property name="caps_lock_warning">False</property>
@@ -17530,8 +17678,11 @@ combined into a single Open Virtualization Format Archive</property>
                           <object class="GtkTable" id="tableEditDispCapture">
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="n_rows">4</property>
+                            <property name="n_rows">5</property>
                             <property name="n_columns">2</property>
+                            <child>
+                              <placeholder/>
+                            </child>
                             <child>
                               <object class="GtkHBox" id="hboxEditDispCapturePath">
                                 <property name="visible">True</property>
@@ -17889,6 +18040,27 @@ combined into a single Open Virtualization Format Archive</property>
                                 <property name="y_padding">2</property>
                               </packing>
                             </child>
+                            <child>
+                              <object class="GtkCheckButton" id="checkbuttonEditDispCaptureRecAudio">
+                                <property name="label" translatable="yes">_Record Audio</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">False</property>
+                                <property name="tooltip_text" translatable="yes">When selected, the guest's audio will also be recorded to the video stream</property>
+                                <property name="use_underline">True</property>
+                                <property name="draw_indicator">True</property>
+                                <signal name="toggled" handler="disp_toggleCaptureAudio" swapped="no"/>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="right_attach">2</property>
+                                <property name="top_attach">4</property>
+                                <property name="bottom_attach">5</property>
+                                <property name="y_options"/>
+                                <property name="x_padding">5</property>
+                                <property name="y_padding">2</property>
+                              </packing>
+                            </child>
                           </object>
                           <packing>
                             <property name="expand">True</property>
@@ -18136,7 +18308,7 @@ combined into a single Open Virtualization Format Archive</property>
                               <object class="GtkTable" id="tableEditStorAttr">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
-                                <property name="n_rows">9</property>
+                                <property name="n_rows">10</property>
                                 <property name="n_columns">2</property>
                                 <child>
                                   <placeholder/>
@@ -18429,6 +18601,49 @@ combined into a single Open Virtualization Format Archive</property>
                                     <property name="y_padding">2</property>
                                   </packing>
                                 </child>
+                                <child>
+                                  <object class="GtkLabel" id="labelEditStorFloppyType">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">False</property>
+                                    <property name="xalign">1</property>
+                                    <property name="label" translatable="yes">Drive _Type:</property>
+                                    <property name="use_underline">True</property>
+                                    <property name="mnemonic_widget">comboboxEditStorFloppyType</property>
+                                  </object>
+                                  <packing>
+                                    <property name="top_attach">9</property>
+                                    <property name="bottom_attach">10</property>
+                                    <property name="x_options">GTK_FILL</property>
+                                    <property name="y_options"/>
+                                    <property name="y_padding">2</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkComboBox" id="comboboxEditStorFloppyType">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">False</property>
+                                    <property name="tooltip_text" translatable="yes">Select the drive mode of the floppy drive.
+* If unsure, 3½" 1.44MB Floppy</property>
+                                    <property name="model">liststoreEditStorFloppyType</property>
+                                    <property name="active">3</property>
+                                    <signal name="changed" handler="storage_floppy_type" swapped="no"/>
+                                    <child>
+                                      <object class="GtkCellRendererText" id="cellrenderertextEditStorFloppyType"/>
+                                      <attributes>
+                                        <attribute name="text">1</attribute>
+                                      </attributes>
+                                    </child>
+                                  </object>
+                                  <packing>
+                                    <property name="left_attach">1</property>
+                                    <property name="right_attach">2</property>
+                                    <property name="top_attach">9</property>
+                                    <property name="bottom_attach">10</property>
+                                    <property name="y_options"/>
+                                    <property name="x_padding">5</property>
+                                    <property name="y_padding">2</property>
+                                  </packing>
+                                </child>
                               </object>
                             </child>
                           </object>
@@ -18680,11 +18895,13 @@ combined into a single Open Virtualization Format Archive</property>
                     <child>
                       <object class="GtkCheckButton" id="checkbuttonEditAudioIn">
                         <property name="label" translatable="yes">Enable Audio _Input</property>
+                        <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">False</property>
                         <property name="tooltip_text" translatable="yes">Enables audio input (e.g. microphone) for the guest's soundcard</property>
                         <property name="use_underline">True</property>
                         <property name="draw_indicator">True</property>
+                        <signal name="toggled" handler="audio_input_toggle" swapped="no"/>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
@@ -18715,11 +18932,13 @@ combined into a single Open Virtualization Format Archive</property>
                     <child>
                       <object class="GtkCheckButton" id="checkbuttonEditAudioOut">
                         <property name="label" translatable="yes">Enable Audio _Output</property>
+                        <property name="visible">True</property>
                         <property name="can_focus">True</property>
                         <property name="receives_default">False</property>
                         <property name="tooltip_text" translatable="yes">Enables audio output for the guest's soundcard. If disabled the guest will not output sound</property>
                         <property name="use_underline">True</property>
                         <property name="draw_indicator">True</property>
+                        <signal name="toggled" handler="audio_output_toggle" swapped="no"/>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
@@ -19645,30 +19864,6 @@ Multiple parameters should be specified one per line</property>
                                   </packing>
                                 </child>
                                 <child>
-                                  <object class="GtkEntry" id="entryEditSerialPath">
-                                    <property name="visible">True</property>
-                                    <property name="can_focus">True</property>
-                                    <property name="tooltip_text" translatable="yes">Path to the serial port's pipe on the host when in HostPipe mode otherwise the host's serial port device name to use</property>
-                                    <property name="invisible_char">●</property>
-                                    <property name="truncate_multiline">True</property>
-                                    <property name="invisible_char_set">True</property>
-                                    <property name="primary_icon_activatable">False</property>
-                                    <property name="secondary_icon_activatable">False</property>
-                                    <property name="primary_icon_sensitive">True</property>
-                                    <property name="secondary_icon_sensitive">True</property>
-                                    <signal name="activate" handler="serial_portpath" swapped="no"/>
-                                  </object>
-                                  <packing>
-                                    <property name="left_attach">1</property>
-                                    <property name="right_attach">2</property>
-                                    <property name="top_attach">3</property>
-                                    <property name="bottom_attach">4</property>
-                                    <property name="y_options"/>
-                                    <property name="x_padding">5</property>
-                                    <property name="y_padding">2</property>
-                                  </packing>
-                                </child>
-                                <child>
                                   <object class="GtkCheckButton" id="checkbuttonEditSerialPipe">
                                     <property name="label" translatable="yes">_Connect to existing pipe/socket</property>
                                     <property name="visible">True</property>
@@ -19686,6 +19881,58 @@ Multiple parameters should be specified one per line</property>
                                     <property name="bottom_attach">3</property>
                                     <property name="y_options"/>
                                     <property name="x_padding">10</property>
+                                    <property name="y_padding">2</property>
+                                  </packing>
+                                </child>
+                                <child>
+                                  <object class="GtkHBox" id="hboxEditSerialPath">
+                                    <property name="visible">True</property>
+                                    <property name="can_focus">False</property>
+                                    <child>
+                                      <object class="GtkEntry" id="entryEditSerialPath">
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="tooltip_text" translatable="yes">Path to the serial port's pipe on the host when in HostPipe mode otherwise the host's serial port device name to use</property>
+                                        <property name="invisible_char">●</property>
+                                        <property name="truncate_multiline">True</property>
+                                        <property name="invisible_char_set">True</property>
+                                        <property name="primary_icon_activatable">False</property>
+                                        <property name="secondary_icon_activatable">False</property>
+                                        <property name="primary_icon_sensitive">True</property>
+                                        <property name="secondary_icon_sensitive">True</property>
+                                        <signal name="activate" handler="serial_portpath" swapped="no"/>
+                                        <signal name="focus-out-event" handler="serial_portpath" swapped="no"/>
+                                      </object>
+                                      <packing>
+                                        <property name="expand">True</property>
+                                        <property name="fill">True</property>
+                                        <property name="position">0</property>
+                                      </packing>
+                                    </child>
+                                    <child>
+                                      <object class="GtkButton" id="buttonEditSerialPortPathGenerate">
+                                        <property name="visible">True</property>
+                                        <property name="can_focus">True</property>
+                                        <property name="receives_default">True</property>
+                                        <property name="tooltip_text" translatable="yes">Try to automatically generate a suitable port / file path</property>
+                                        <property name="image">imageGeneratePortPath</property>
+                                        <property name="relief">none</property>
+                                        <signal name="pressed" handler="serial_gen_path" swapped="no"/>
+                                      </object>
+                                      <packing>
+                                        <property name="expand">False</property>
+                                        <property name="fill">False</property>
+                                        <property name="position">1</property>
+                                      </packing>
+                                    </child>
+                                  </object>
+                                  <packing>
+                                    <property name="left_attach">1</property>
+                                    <property name="right_attach">2</property>
+                                    <property name="top_attach">3</property>
+                                    <property name="bottom_attach">4</property>
+                                    <property name="y_options"/>
+                                    <property name="x_padding">5</property>
                                     <property name="y_padding">2</property>
                                   </packing>
                                 </child>
@@ -21455,6 +21702,17 @@ Multiple parameters should be specified one per line</property>
                                 <signal name="activate" handler="keyboard_send" swapped="no"/>
                               </object>
                             </child>
+                            <child>
+                              <object class="GtkImageMenuItem" id="menuitemKeyboardReleaseKeys">
+                                <property name="label" translatable="yes">Release Keys</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="image">image72</property>
+                                <property name="use_stock">False</property>
+                                <property name="always_show_image">True</property>
+                                <signal name="activate" handler="keyboard_releasekeys" swapped="no"/>
+                              </object>
+                            </child>
                           </object>
                         </child>
                       </object>
@@ -21806,7 +22064,7 @@ Multiple parameters should be specified one per line</property>
                 <property name="sensitive">False</property>
                 <property name="can_focus">False</property>
                 <property name="tooltip_text" translatable="yes">Open the guest's display
-  * The guest must have RDP server enabled in its settings and you must have a correctly configured RDP client</property>
+  * The guest must have the display server enabled in its settings and you must have a correctly configured RDP/VNC client</property>
                 <property name="is_important">True</property>
                 <property name="label" translatable="yes">_Guest Display</property>
                 <property name="use_underline">True</property>
@@ -22613,8 +22871,11 @@ Multiple parameters should be specified one per line</property>
                 <property name="visible">True</property>
                 <property name="sensitive">False</property>
                 <property name="can_focus">False</property>
-                <property name="n_rows">4</property>
+                <property name="n_rows">5</property>
                 <property name="n_columns">2</property>
+                <child>
+                  <placeholder/>
+                </child>
                 <child>
                   <object class="GtkLabel" id="labelPrefsConnectionProfileName">
                     <property name="visible">True</property>
@@ -22781,6 +23042,27 @@ Multiple parameters should be specified one per line</property>
                     <property name="y_padding">2</property>
                   </packing>
                 </child>
+                <child>
+                  <object class="GtkCheckButton" id="checkbuttonConnectionProfileAutoConnect">
+                    <property name="label" translatable="yes">Auto-_Connect on Start</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">False</property>
+                    <property name="tooltip_text" translatable="yes">Automatically connect with this profile when RemoteBox starts</property>
+                    <property name="use_underline">True</property>
+                    <property name="draw_indicator">True</property>
+                    <signal name="toggled" handler="profile_autoconn_change" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="left_attach">1</property>
+                    <property name="right_attach">2</property>
+                    <property name="top_attach">4</property>
+                    <property name="bottom_attach">5</property>
+                    <property name="y_options"/>
+                    <property name="x_padding">5</property>
+                    <property name="y_padding">2</property>
+                  </packing>
+                </child>
               </object>
               <packing>
                 <property name="expand">True</property>
@@ -22920,7 +23202,7 @@ Multiple parameters should be specified one per line</property>
                     <property name="label" translatable="yes">_Copy &amp; Convert</property>
                     <property name="use_underline">True</property>
                     <property name="icon_widget">imageHDCopy22</property>
-                    <signal name="clicked" handler="show_vmm_copy" swapped="no"/>
+                    <signal name="clicked" handler="show_dialog_vmm_copy" swapped="no"/>
                   </object>
                   <packing>
                     <property name="expand">False</property>

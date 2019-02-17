@@ -12,7 +12,9 @@ sub setup_edit_dialog_display() {
     if (IMachine_getGraphicsControllerType($vmc{IMachine}) eq 'VMSVGA') { $gui{comboboxEditDispVGA}->set_active(1); }
     else { $gui{comboboxEditDispVGA}->set_active(0); }
 
-    $gui{spinbuttonEditDispVidMem}->set_range($$vhost{minguestvram}, $$vhost{maxguestvram});
+    # Virtualbox incorrectly reports 0MB as valid for the minimum video RAM so we anchor to 1M
+    # $gui{spinbuttonEditDispVidMem}->set_range($$vhost{minguestvram}, $$vhost{maxguestvram});
+    $gui{spinbuttonEditDispVidMem}->set_range(1, $$vhost{maxguestvram});
     $gui{spinbuttonEditDispVidMem}->set_value(IMachine_getVRAMSize($vmc{IMachine}));
     $gui{spinbuttonEditDispMonitor}->set_range(1, $$vhost{maxmonitors});
     $gui{spinbuttonEditDispMonitor}->set_value(IMachine_getMonitorCount($vmc{IMachine}));
@@ -23,6 +25,9 @@ sub setup_edit_dialog_display() {
     $gui{checkbuttonEditDisp2D}->set_active(&bl(IMachine_getAccelerate2DVideoEnabled($vmc{IMachine})));
     $gui{checkbuttonEditDispServer}->set_active(&bl(IVRDEServer_getEnabled($vmc{IVRDEServer})));
     $gui{checkbuttonEditDispCapture}->set_active(&bl(IMachine_getVideoCaptureEnabled($vmc{IMachine})));
+    my $capoptions = IMachine_getVideoCaptureOptions($vmc{IMachine});
+    $capoptions =~ s/ //g;
+    ($capoptions =~ m/ac_enabled=true/i) ? $gui{checkbuttonEditDispCaptureRecAudio}->set_active(1) : $gui{checkbuttonEditDispCaptureRecAudio}->set_active(0);
     $gui{tableEditDispRemote}->set_sensitive($gui{checkbuttonEditDispServer}->get_active()); # Ghost/Unghost other widgets based on server enabled
     $gui{tableEditDispCapture}->set_sensitive($gui{checkbuttonEditDispCapture}->get_active()) if ($vmc{SessionType} eq 'WriteLock'); # Ghost/Unghost other widgets based on capture enabled
     $gui{entryEditDispPort}->set_text(IVRDEServer_getVRDEProperty($vmc{IVRDEServer}, 'TCP/Ports'));
@@ -96,8 +101,8 @@ sub disp_vidmem {
 # Set the number of virtual monitors
 sub disp_monitors {
     if ($vmc{SessionType} eq 'WriteLock') {
-    IMachine_setMonitorCount($vmc{IMachine}, int($gui{spinbuttonEditDispMonitor}->get_value_as_int()));
-    return 0; # Must return this value for the signal used.
+        IMachine_setMonitorCount($vmc{IMachine}, int($gui{spinbuttonEditDispMonitor}->get_value_as_int()));
+        return 0; # Must return this value for the signal used.
     }
 }
 
@@ -106,6 +111,12 @@ sub disp_toggleRDP {
     my $state = $gui{checkbuttonEditDispServer}->get_active();
     IVRDEServer_setEnabled($vmc{IVRDEServer}, $state);
     $gui{tableEditDispRemote}->set_sensitive($state);
+}
+
+# Set whether the audio stream should be captured when capturing video
+sub disp_toggleCaptureAudio {
+    my $state = $gui{checkbuttonEditDispCaptureRecAudio}->get_active();
+    $state ? IMachine_setVideoCaptureOptions($vmc{IMachine}, 'ac_enabled=true') : IMachine_setVideoCaptureOptions($vmc{IMachine}, 'ac_enabled=false');
 }
 
 sub disp_RDPtime {

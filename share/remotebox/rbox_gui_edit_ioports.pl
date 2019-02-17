@@ -148,17 +148,17 @@ sub parallel_ioport {
     return 0;
 }
 
-# The serial port mode
-sub serial_portmode {
+# Attempt to generate an appropriate port path automatically.
+sub serial_gen_path {
     my ($widget) = @_;
     my $vhost = &vhost();
 
     # For all serial modes except disconnected, it needs a path set
-    # before it can be activated, otherwise it errors. We try to do our best with
-    # defaults here
+    # before it can be activated, otherwise it errors.
+
     if ($vmc{SessionType} eq 'WriteLock') {
         my ($ISerialPort, $port) = &serial_callout();
-        my $mode = &getsel_combo($widget, 0);
+        my $mode = &getsel_combo($gui{comboboxEditSerialMode}, 0);
 
         if ($mode eq 'RawFile') {
             $$vhost{os} =~ m/^WINDOWS/i ? $gui{entryEditSerialPath}->set_text("\%temp\%\\raw-$vmc{Name}-ser" . ($port + 1))
@@ -178,8 +178,25 @@ sub serial_portmode {
             $gui{entryEditSerialPath}->set_text($device);
         }
         elsif ($mode eq 'TCP') { $gui{entryEditSerialPath}->set_text('65000'); }
+        else { $gui{entryEditSerialPath}->set_text(''); } # Disconnected mode (it won't actually get saved by VB tho
 
         $gui{entryEditSerialPath}->signal_emit('activate');
+    }
+}
+
+# The serial port mode
+sub serial_portmode {
+    my ($widget) = @_;
+    my $vhost = &vhost();
+
+    # For all serial modes except disconnected, it needs a path set before it can be activated, otherwise it errors.
+    if ($vmc{SessionType} eq 'WriteLock') {
+        my ($ISerialPort, $port) = &serial_callout();
+        my $mode = &getsel_combo($widget, 0);
+
+        # If the path is empty, try to generate one to avoid errors as every mode except disconnected
+        # cannot be empty.
+        if (ISerialPort_getPath($ISerialPort) eq '') { &serial_gen_path(); }
         ISerialPort_setHostMode($ISerialPort, &getsel_combo($widget, 0));
     }
 }

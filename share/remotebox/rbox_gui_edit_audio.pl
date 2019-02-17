@@ -13,19 +13,18 @@ sub setup_edit_dialog_audio {
     $gui{comboboxEditAudioCodec}->signal_handler_block($signal{audiocodec});
     $gui{checkbuttonEditAudioEnable}->set_active(&bl(IAudioAdapter_getEnabled($vmc{IAudioAdapter})));
     $gui{tableEditAudio}->set_sensitive($gui{checkbuttonEditAudioEnable}->get_active()); # Ghost/Unghost other widgets based on audio enabled
+    $gui{checkbuttonEditAudioIn}->set_active(&bl(IAudioAdapter_getEnabledIn($vmc{IAudioAdapter})));
+    $gui{checkbuttonEditAudioOut}->set_active(&bl(IAudioAdapter_getEnabledOut($vmc{IAudioAdapter})));
 
-    # Enabling/Disabling Audio Inputs & Outputs seems broken in the API (test: 5.0.20)
-    #$gui{checkbuttonEditAudioIn}->set_active(&bl(IAudioAdapter_getEnabledIn($vmc{IAudioAdapter})));
-    #$gui{checkbuttonEditAudioOut}->set_active(&bl(IAudioAdapter_getEnabledOut($vmc{IAudioAdapter})));
-
-    # Set WinMM and MMPM to Null as they no longer seem supported and cause problems if set.
+    # Set WinMM, MMPM and SolAudio to Null as they no longer seem supported and cause problems if set.
     my $AudioDriver = IAudioAdapter_getAudioDriver($vmc{IAudioAdapter});
-    IAudioAdapter_setAudioDriver($vmc{IAudioAdapter}, 'Null') if ($AudioDriver eq 'WinMM' or $AudioDriver eq 'MMPM');
+    IAudioAdapter_setAudioDriver($vmc{IAudioAdapter}, 'Null') if ($AudioDriver eq 'WinMM' or $AudioDriver eq 'MMPM' or $AudioDriver eq 'SolAudio');
 
     if ($$vhost{os} =~ m/Linux/i) { $gui{comboboxEditAudioDriver}->set_model($gui{liststoreEditAudioDriverLin}); }
     elsif ($$vhost{os} =~ m/Windows/i) { $gui{comboboxEditAudioDriver}->set_model($gui{liststoreEditAudioDriverWin}); }
     elsif ($$vhost{os} =~ m/SunOS/i) { $gui{comboboxEditAudioDriver}->set_model($gui{liststoreEditAudioDriverSol}); }
     elsif ($$vhost{os} =~ m/Darwin/i) { $gui{comboboxEditAudioDriver}->set_model($gui{liststoreEditAudioDriverMac}); }
+    elsif ($$vhost{os} =~ m/FreeBSD/i) { $gui{comboboxEditAudioDriver}->set_model($gui{liststoreEditAudioDriverFreeBSD}); }
     else { $gui{comboboxEditAudioDriver}->set_model($gui{liststoreEditAudioDriverOther}); }
 
     my $controller =  IAudioAdapter_getAudioController($vmc{IAudioAdapter});
@@ -49,23 +48,21 @@ sub audio_toggle {
     }
 }
 
-# Enabling/Disabling Audio Inputs & Outputs seems broken in the API (test: 5.0.20)
 # Toggle whether audio inputs are enabled
-#sub audio_input_toggle {
-#    if ($vmc{SessionType} eq 'WriteLock') {
-#        my $state = $gui{checkbuttonEditAudioIn}->get_active();
-#        IAudioAdapter_setEnabledIn($vmc{IAudioAdapter}, $state);
-#    }
-#}
+sub audio_input_toggle {
+    if ($vmc{SessionType} eq 'WriteLock') {
+        my $state = $gui{checkbuttonEditAudioIn}->get_active();
+        IAudioAdapter_setEnabledIn($vmc{IAudioAdapter}, $state);
+    }
+}
 
-# Enabling/Disabling Audio Inputs & Outputs seems broken in the API (test: 5.0.20)
 # Toggle whether audio outputs are enabled
-#sub audio_output_toggle {
-#    if ($vmc{SessionType} eq 'WriteLock') {
-#        my $state = $gui{checkbuttonEditAudioOut}->get_active();
-#        IAudioAdapter_setEnabledOut($vmc{IAudioAdapter}, $state);
-#    }
-#}
+sub audio_output_toggle {
+    if ($vmc{SessionType} eq 'WriteLock') {
+        my $state = $gui{checkbuttonEditAudioOut}->get_active();
+        IAudioAdapter_setEnabledOut($vmc{IAudioAdapter}, $state);
+    }
+}
 
 # Set the audio controller type
 sub audio_ctr {

@@ -16,7 +16,7 @@
 
 
 Name:           remotebox
-Version:        2.3
+Version:        2.5
 Release:        1%{?dist}
 Summary:        A VirtualBox client with remote management
 License:        GPLv2+
@@ -91,5 +91,5 @@ desktop-file-validate %{buildroot}/%{_datadir}/applications/%{name}.desktop
 
 
 %changelog
-* Sat Apr 29 2017 Ian Chapman <packages[AT]amiga-hardware.com> - 2.3-1
+* Sun Apr 29 2018 Ian Chapman <packages[AT]amiga-hardware.com> - 2.5-1
 - Example SPEC file for RemoteBox

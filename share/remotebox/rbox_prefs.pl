@@ -3,6 +3,7 @@ use strict;
 use warnings;
 our %gui;
 our %prefs = (RDPCLIENT         => 'xfreerdp /size:%Xx%Y /bpp:32 +clipboard /sound /t:"%n - RemoteBox" /v:%h:%p',
+              VNCCLIENT         => 'vncviewer -Shared -AcceptClipboard -SetPrimary -SendClipboard -SendPrimary -RemoteResize -DesktopSize %Xx%Y  %h:%p',
               HEARTBEAT         => 1,
               ADDADDITIONS      => 1,
               RDPAUTOOPEN       => 1,
@@ -12,6 +13,7 @@ our %prefs = (RDPCLIENT         => 'xfreerdp /size:%Xx%Y /bpp:32 +clipboard /sou
               EXTENDEDDETAILS   => 0,
               SSLVERIFY         => 0,
               DEFRDPPORTS       => '3389-4389',
+              DEFVNCPORTS       => '5900-5999',
               AUTOHINTDISP      => 0,
               AUTOHINTDISPX     => 1280,
               AUTOHINTDISPY     => 1024,
@@ -27,7 +29,8 @@ our %prefs = (RDPCLIENT         => 'xfreerdp /size:%Xx%Y /bpp:32 +clipboard /sou
               EXPANDDETUSB      => 1,
               EXPANDDETSHARE    => 1,
               EXPANDDETRUN      => 1,
-              EXPANDDETDESC     => 1);
+              EXPANDDETDESC     => 1,
+              AUTOCONNPROF      => '');
 
 # Import the current remotebox preferences
 sub rbprefs_get {
@@ -39,7 +42,7 @@ sub rbprefs_get {
     # See if we can make some more useful defaults for OSs which don't have xfreerdp
     if ($^O =~ m/netbsd/i) { $prefs{RDPCLIENT} = 'rdesktop -r sound:local -r clipboard:PRIMARYCLIPBOARD -T "%n - RemoteBox" %h:%p'; }
     elsif ($^O =~ m/solaris/i) { $prefs{RDPCLIENT} = 'rdesktop -r sound:local -r clipboard:PRIMARYCLIPBOARD -T "%n - RemoteBox" %h:%p'; }
-    elsif ($^O =~ m/MSWin/) { $prefs{RDPCLIENT} = 'mstsc /w:%X /h:%Y /v:%h:%p >nul'; }
+    elsif ($^O =~ m/MSWin/) { $prefs{RDPCLIENT} = 'mstsc /w:%X /h:%Y /v:%h:%p'; }
 
     if (open(PREFS, '<', $gui{CONFIGFILE})) {
         my @contents = <PREFS>;
@@ -243,7 +246,7 @@ sub remove_pf_rule6 {
 # Shows the RemoteBox preferences dialog
 sub show_dialog_prefs {
     $gui{entryPrefsRDPClient}->set_text($prefs{RDPCLIENT});
-    $gui{entryPrefsRDPPorts}->set_text($prefs{DEFRDPPORTS});
+    $gui{entryPrefsVNCClient}->set_text($prefs{VNCCLIENT});
     $gui{checkbuttonPrefsRDPAuto}->set_active($prefs{RDPAUTOOPEN});
     $gui{checkbuttonPrefsHeartbeat}->set_active($prefs{HEARTBEAT});
     $gui{checkbuttonPrefsAddAdditions}->set_active($prefs{ADDADDITIONS});
@@ -265,7 +268,7 @@ sub show_dialog_prefs {
 
     if ($response eq 'ok') {
         $prefs{RDPCLIENT} = $gui{entryPrefsRDPClient}->get_text();
-        $prefs{DEFRDPPORTS} = $gui{entryPrefsRDPPorts}->get_text();
+        $prefs{VNCCLIENT} = $gui{entryPrefsVNCClient}->get_text();
         $prefs{RDPAUTOOPEN} = int($gui{checkbuttonPrefsRDPAuto}->get_active());
         $prefs{HEARTBEAT} = int($gui{checkbuttonPrefsHeartbeat}->get_active());
         $prefs{ADDADDITIONS} = int($gui{checkbuttonPrefsAddAdditions}->get_active());
@@ -464,16 +467,32 @@ sub show_rdppreset_menu {
     return 0;
 }
 
-# Updates the entry widget with the selected preset
+# Shows the preset VNC options for selection
+sub show_vncpreset_menu {
+    my ($widget, $event) = @_; #$event->time
+    $gui{menuVNCPreset}->popup(undef, undef, undef, undef, 0, $event->time) if ($event->button == 1);
+    return 0;
+}
+
+# Updates the RDP widget with the selected preset
 sub set_rdppreset {
     my ($widget) = @_;
 
     if ($widget eq $gui{menuitemrdppreset1}) { $gui{entryPrefsRDPClient}->set_text('xfreerdp /size:%Xx%Y /bpp:32 +clipboard /sound /t:"%n - RemoteBox" /v:%h:%p'); }
     elsif ($widget eq $gui{menuitemrdppreset2}) { $gui{entryPrefsRDPClient}->set_text('xfreerdp -g %Xx%Y --plugin cliprdr --plugin rdpsnd -T "%n - RemoteBox" %h:%p'); }
     elsif ($widget eq $gui{menuitemrdppreset3}) { $gui{entryPrefsRDPClient}->set_text('rdesktop -r sound:local -r clipboard:PRIMARYCLIPBOARD -T "%n - RemoteBox" %h:%p'); }
-    elsif ($widget eq $gui{menuitemrdppreset4}) { $gui{entryPrefsRDPClient}->set_text('mstsc /w:%X /h:%Y /v:%h:%p >nul'); }
+    elsif ($widget eq $gui{menuitemrdppreset4}) { $gui{entryPrefsRDPClient}->set_text('krdc rdp://%h:%p'); }
+    elsif ($widget eq $gui{menuitemrdppreset5}) { $gui{entryPrefsRDPClient}->set_text('mstsc /w:%X /h:%Y /v:%h:%p'); }
 }
 
+# Updates the VNC entry widget with the selected preset
+sub set_vncpreset {
+    my ($widget) = @_;
 
+    if ($widget eq $gui{menuitemvncpreset1}) { $gui{entryPrefsVNCClient}->set_text('vncviewer -Shared -AcceptClipboard -SetPrimary -SendClipboard -SendPrimary -RemoteResize -DesktopSize %Xx%Y  %h::%p'); }
+    elsif ($widget eq $gui{menuitemvncpreset2}) { $gui{entryPrefsVNCClient}->set_text('vncviewer -Shared -ClientCutText -SendPrimary -ServerCutText %h::%p'); }
+    elsif ($widget eq $gui{menuitemvncpreset3}) { $gui{entryPrefsVNCClient}->set_text('vinagre --geometry=%Xx%Y %h::%p'); }
+    elsif ($widget eq $gui{menuitemvncpreset4}) { $gui{entryPrefsVNCClient}->set_text('krdc vnc://%h:%p'); }
+}
 
 1;
