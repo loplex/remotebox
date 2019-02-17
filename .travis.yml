@@ -2,10 +2,16 @@ os: linux
 sudo: false
 dist: cosmic
 
+addons:
+  apt:
+    packages:
+    - fakeroot
+
 script:
     - sh -c 'srcs="$(ls -1A)" && mkdir -p "./build/remotebox" && mv ${srcs} "./build/remotebox/"'
     - cd './build/remotebox'
-    - dpkg-buildpackage -us -uc 
-    - ls -alhR
+    - dpkg-buildpackage -us -uc
+    - find -print0 |xargs ls -ld
+    #- ls -alhR
     - ls -l ..
 
