@@ -1,0 +1,394 @@
+# Edit Storage Settings of a Guest
+use strict;
+use warnings;
+our (%gui, %signal, %vmc);
+
+sub setup_edit_dialog_storage {
+    my $vhost = &vhost();
+    &addrow_log("Fetching storage settings for $vmc{Name}...");
+    &busy_pointer($gui{dialogEdit}, 1);
+    &fill_list_editstorage($vmc{IMachine});
+    $gui{menuAttachAdd} = Gtk2::Menu->new();
+    $gui{menuAttachHD} = Gtk2::Menu->new();
+    $gui{menuAttachDVD} = Gtk2::Menu->new();
+    $gui{menuAttachFloppy} = Gtk2::Menu->new();
+    $gui{menuitemAttachHD} = Gtk2::MenuItem->new_with_label('Hard Disks');
+    $gui{menuitemAttachDVD} = Gtk2::MenuItem->new_with_label('Optical Discs');
+    $gui{menuitemAttachFloppy} = Gtk2::MenuItem->new_with_label('Floppy Disks');
+    $gui{menuitemAttachHD}->set_submenu($gui{menuAttachHD});
+    $gui{menuitemAttachDVD}->set_submenu($gui{menuAttachDVD});
+    $gui{menuitemAttachFloppy}->set_submenu($gui{menuAttachFloppy});
+    $gui{menuitemAttachHD}->show();
+    $gui{menuitemAttachDVD}->show();
+    $gui{menuitemAttachFloppy}->show();
+    $gui{menuAttachAdd}->append($gui{menuitemAttachHD});
+    $gui{menuAttachAdd}->append($gui{menuitemAttachDVD});
+    $gui{menuAttachAdd}->append($gui{menuitemAttachFloppy});
+
+    my $newhditem = Gtk2::MenuItem->new_with_label('Create New HardDisk');
+    $gui{menuAttachHD}->append($newhditem);
+    $newhditem->show();
+    $newhditem->signal_connect(activate => \&show_dialog_createhd);
+    my $hdsep = Gtk2::SeparatorMenuItem->new();
+    $gui{menuAttachHD}->append($hdsep);
+    $hdsep->show();
+
+    my $emptydvditem = Gtk2::MenuItem->new_with_label('<Empty Drive>');
+    $gui{menuAttachDVD}->append($emptydvditem);
+    $emptydvditem->show();
+    $emptydvditem->signal_connect(activate => \&storage_attach_dvd, '');
+    my $dvdsep = Gtk2::SeparatorMenuItem->new();
+    $gui{menuAttachDVD}->append($dvdsep);
+    $dvdsep->show();
+
+    my $emptyfloppyitem = Gtk2::MenuItem->new_with_label('<Empty Drive>');
+    $gui{menuAttachFloppy}->append($emptyfloppyitem);
+    $emptyfloppyitem->show();
+    $emptyfloppyitem->signal_connect(activate => \&storage_attach_floppy, '');
+    my $floppysep = Gtk2::SeparatorMenuItem->new();
+    $gui{menuAttachFloppy}->append($floppysep);
+    $floppysep->show();
+
+    my $IMediumHDRef = &get_all_media('HardDisk');
+    my $IMediumDVDRef = &get_all_media('DVD');
+    my $IMediumFloppyRef = &get_all_media('Floppy');
+
+    foreach (sort { lc($$IMediumHDRef{$a}) cmp lc($$IMediumHDRef{$b}) } (keys %$IMediumHDRef)) {
+        my $item = Gtk2::MenuItem->new_with_label($$IMediumHDRef{$_});
+        $gui{menuAttachHD}->append($item);
+        $item->show();
+        $item->signal_connect(activate => \&storage_attach_hd, $_);
+    }
+
+    if ($$vhost{dvd}) {
+        foreach my $pdvd (@{$$vhost{dvd}}) {
+            my $item = Gtk2::MenuItem->new_with_label('<Server Drive> ' . IMedium_getLocation($pdvd));
+            $gui{menuAttachDVD}->append($item);
+            $item->show();
+            $item->signal_connect(activate => \&storage_attach_dvd, $pdvd);
+        }
+
+        my $pdvdsep = Gtk2::SeparatorMenuItem->new();
+        $gui{menuAttachDVD}->append($pdvdsep);
+        $pdvdsep->show();
+    }
+
+    foreach (sort { lc($$IMediumDVDRef{$a}) cmp lc($$IMediumDVDRef{$b}) } (keys %$IMediumDVDRef)) {
+        my $item = Gtk2::MenuItem->new_with_label($$IMediumDVDRef{$_});
+        $gui{menuAttachDVD}->append($item);
+        $item->show();
+        $item->signal_connect(activate => \&storage_attach_dvd, $_);
+    }
+
+    if ($$vhost{floppy}) {
+        foreach my $pfloppy (@{$$vhost{floppy}}) {
+            my $item = Gtk2::MenuItem->new_with_label('<Server Drive> ' . IMedium_getLocation($pfloppy));
+            $gui{menuAttachFloppy}->append($item);
+            $item->show();
+            $item->signal_connect(activate => \&storage_attach_floppy, $pfloppy);
+        }
+
+        my $pfloppysep = Gtk2::SeparatorMenuItem->new();
+        $gui{menuAttachDVD}->append($pfloppysep);
+        $pfloppysep->show();
+    }
+
+    foreach (sort { lc($$IMediumFloppyRef{$a}) cmp lc($$IMediumFloppyRef{$b}) } (keys %$IMediumFloppyRef)) {
+        my $item = Gtk2::MenuItem->new_with_label($$IMediumFloppyRef{$_});
+        $gui{menuAttachFloppy}->append($item);
+        $item->show();
+        $item->signal_connect(activate => \&storage_attach_floppy, $_);
+    }
+
+    &busy_pointer($gui{dialogEdit}, 0);
+    &addrow_log('Storage settings complete.');
+}
+
+# Displays the create a new hard disk dialog. Creates & attaches based on options
+sub show_dialog_createhd {
+    my $vhost = &vhost();
+    my $guestname = IMachine_getName($vmc{IMachine});
+    $gui{comboboxCreateHDFormat}->set_active(0);
+    $gui{radiobuttonCreateHDDynamic}->show();
+    $gui{radiobuttonCreateHDFixed}->show();
+    $gui{radiobuttonCreateHDSplit}->hide();
+    $gui{entryCreateHDName}->set_text($guestname . int(rand(9999)));
+    $gui{spinbuttonCreateHDSize}->set_range(8.00, int($$vhost{maxhdsize}/1048576));
+    $gui{spinbuttonCreateHDSize}->set_value(8192.00);
+
+    do {
+        my $response = $gui{dialogCreateHD}->run;
+
+        if ($response eq 'ok') {
+            # No validation needed on other entries
+            if (!$gui{entryCreateHDName}->get_text()) { &show_err_msg('invalidname', '(Disk Name)'); }
+            else {
+                $gui{dialogCreateHD}->hide;
+                my ($vol, $dir, undef) = &rsplitpath(IMachine_getSettingsFilePath($vmc{IMachine}));
+
+                my %newhd = (diskname   => $gui{entryCreateHDName}->get_text(),
+                             size       => $gui{spinbuttonCreateHDSize}->get_value_as_int() * 1048576,
+                             allocation => 'Standard', # Standard == Dynamic Allocation
+                             imgformat  => &getsel_combo($gui{comboboxCreateHDFormat}, 1),
+                             location   => $vol . $dir);
+
+                if ($gui{radiobuttonCreateHDFixed}->get_active()) { $newhd{allocation} = 'Fixed'; }
+                elsif ($gui{radiobuttonCreateHDSplit}->get_active()) { $newhd{allocation} = 'VmdkSplit2G'; }
+                my $IMedium = &create_new_hd(\%newhd, $gui{dialogEdit});
+
+                if ($IMedium) {
+                    &storage_attach_hd(undef, $IMedium);
+                    IMachine_saveSettings($vmc{IMachine});
+                    &addrow_log("Settings implicitly saved for $vmc{Name} due to storage attachment.");
+                }
+            }
+        }
+        else { $gui{dialogCreateHD}->hide; }
+
+    } until (!$gui{dialogCreateHD}->visible());
+}
+
+# Handle the radio button sensitivity when selecting an image format when
+# creating a hard disk
+sub sens_createhdformat {
+    my $format = &getsel_combo($gui{comboboxCreateHDFormat}, 1);
+    $gui{radiobuttonCreateHDDynamic}->set_active(1);
+
+    if ($format eq 'vmdk') {
+        $gui{radiobuttonCreateHDDynamic}->show();
+        $gui{radiobuttonCreateHDFixed}->show();
+        $gui{radiobuttonCreateHDSplit}->show();
+    }
+    elsif ($format eq 'vdi' or $format eq 'vhd') {
+        $gui{radiobuttonCreateHDDynamic}->show();
+        $gui{radiobuttonCreateHDFixed}->show();
+        $gui{radiobuttonCreateHDSplit}->hide();
+    }
+    else {
+        $gui{radiobuttonCreateHDDynamic}->show();
+        $gui{radiobuttonCreateHDFixed}->hide();
+        $gui{radiobuttonCreateHDSplit}->hide();
+    }
+}
+
+# Adds a storage controller to the guest
+sub storage_ctr_add {
+    my ($widget) = @_;
+    my $bus = 'Floppy'; # Assume floppy unless set otherwise
+    my $ctrname = '';
+
+    if ($widget eq $gui{menuitemCtrAddIDE}) { $bus = 'IDE'; }
+    elsif ($widget eq $gui{menuitemCtrAddSCSI}) { $bus = 'SCSI'; }
+    elsif ($widget eq $gui{menuitemCtrAddSATA}) { $bus = 'SATA'; }
+    elsif ($widget eq $gui{menuitemCtrAddSAS}) { $bus = 'SAS'; }
+    elsif ($widget eq $gui{menuitemCtrAddUSB}) { $bus = 'USB'; }
+    elsif ($widget eq $gui{menuitemCtrAddNVMe}) { $bus = 'PCIe'; }
+
+    my @Controllers = IMachine_getStorageControllers($vmc{IMachine});
+    my $exists = 0;
+
+    if ($bus eq 'PCIe') { $ctrname = 'NVMe'; }
+    else { $ctrname = $bus; }
+
+    foreach my $ctr (@Controllers) { $exists = 1 if (IStorageController_getBus($ctr) eq $bus) }
+
+    if (!$exists) {
+        my $IStorageController = IMachine_addStorageController($vmc{IMachine}, $ctrname, $bus);
+        # This works around the controller type defaults defaulting to USB. VB itself doesn't seem to use it.
+        if ($bus eq 'SAS') { IStorageController_setControllerType($IStorageController, 'LsiLogicSas', 0); }
+
+        IStorageController_setPortCount($IStorageController, IStorageController_getMinPortCount($IStorageController)); # Controllers have all ports on by default. Set to the minimum
+        &fill_list_editstorage($vmc{IMachine});
+    }
+    elsif ($exists) { &show_err_msg('ctrallocated'); }
+}
+
+# Attaches a hard disk to a controller
+sub storage_attach_hd {
+    my ($widget, $IMedium) = @_;
+    my $storref = &getsel_list_editstorage();
+    my $attached = 0;
+    my %address = &get_free_deviceport($vmc{IMachine}, $$storref{IStorageController});
+
+    if ($address{portnum} > -1) {
+        IMachine_attachDevice($vmc{IMachine}, $$storref{ControllerName}, $address{portnum}, $address{devnum}, 'HardDisk', $IMedium);
+        $attached = 1
+    }
+
+    # If medium wasn't attached, controller must be full
+    if (!$attached) { &show_err_msg('ctrfull'); }
+
+    IMachine_saveSettings($vmc{IMachine});
+    &addrow_log("Settings implicitly saved for $vmc{Name} due to storage attachment.");
+    &fill_list_editstorage($vmc{IMachine});
+}
+
+# Attaches a DVD to a controller or DVD image to DVD ROM
+sub storage_attach_dvd {
+    my ($widget, $IMedium) = @_;
+    my $storref = &getsel_list_editstorage();
+    my $attached = 0;
+
+    # Check if the item is a controller or DVD ROM
+    if (!$$storref{IsController}) { IMachine_mountMedium($vmc{IMachine}, $$storref{ControllerName}, $$storref{Port}, $$storref{Device}, $IMedium); }
+    else {
+        my %address = &get_free_deviceport($vmc{IMachine}, $$storref{IStorageController});
+
+        if ($address{portnum} > -1) {
+            IMachine_attachDevice($vmc{IMachine}, $$storref{ControllerName}, $address{portnum}, $address{devnum}, 'DVD', $IMedium);
+            $attached = 1
+        }
+
+        # If medium wasn't attached, controller must be full
+        if (!$attached) { &show_err_msg('ctrfull'); }
+    }
+
+    IMachine_saveSettings($vmc{IMachine});
+    &addrow_log("Settings implicitly saved for $vmc{Name} due to storage attachment.");
+    &fill_list_editstorage($vmc{IMachine});
+}
+
+# Attaches a floppy to a controller
+sub storage_attach_floppy {
+    my ($widget, $IMedium) = @_;
+    my $storref = &getsel_list_editstorage();
+    my $attached = 0;
+
+    if (!$$storref{IsController}) { IMachine_mountMedium($vmc{IMachine}, $$storref{ControllerName}, $$storref{Port}, $$storref{Device}, $IMedium); }
+    else {
+        my %address = &get_free_deviceport($vmc{IMachine}, $$storref{IStorageController});
+
+        if ($address{portnum} > -1) {
+            IMachine_attachDevice($vmc{IMachine}, $$storref{ControllerName}, $address{portnum}, $address{devnum}, 'Floppy', $IMedium);
+            $attached = 1
+        }
+
+        # If medium wasn't attached, controller must be full
+        if (!$attached) { &show_err_msg('ctrfull'); }
+    }
+
+    IMachine_saveSettings($vmc{IMachine});
+    &addrow_log("Settings implicitly saved for $vmc{Name} due to storage attachment.");
+    &fill_list_editstorage($vmc{IMachine});
+}
+
+# Detaches a storage unit or ejects removable media
+sub storage_attach_rem {
+    my $storref = &getsel_list_editstorage();
+
+    if ((($$storref{MediumType} eq 'Floppy') or ($$storref{MediumType} eq 'DVD')) and $$storref{IMedium}) {
+        IMachine_mountMedium($vmc{IMachine}, $$storref{ControllerName}, $$storref{Port}, $$storref{Device}, '');
+    }
+    else { IMachine_detachDevice($vmc{IMachine}, $$storref{ControllerName}, $$storref{Port}, $$storref{Device}); }
+
+    &fill_list_editstorage($vmc{IMachine});
+}
+
+# Removes a controller from the guest
+sub storage_ctr_rem {
+    my $storref = &getsel_list_editstorage();
+    my @IMediumAttachments = IMachine_getMediumAttachmentsOfController($vmc{IMachine}, $$storref{ControllerName});
+
+    if (@IMediumAttachments) { &show_err_msg('ctrinuse'); }
+    else { IMachine_removeStorageController($vmc{IMachine}, $$storref{ControllerName}); }
+
+    &fill_list_editstorage($vmc{IMachine});
+}
+
+# Sets the controller variant type
+sub storage_ctrtype {
+    my $storref = &getsel_list_editstorage();
+    IStorageController_setControllerType($$storref{IStorageController}, &getsel_combo($gui{comboboxEditStorCtrType}, 0));
+}
+
+# Set / Clear the host I/O cache for the controller
+sub storage_ctrcache {
+    my $storref = &getsel_list_editstorage();
+    IStorageController_setUseHostIOCache($$storref{IStorageController}, $gui{checkbuttonEditStorCache}->get_active());
+}
+
+sub show_attach_menu {
+    my ($widget, $event) = @_;
+    $gui{menuAttachAdd}->popup(undef, undef, undef, undef, 0, $event->time) if ($event->button == 1);
+    return 0;
+}
+
+sub show_ctr_menu {
+    my ($widget, $event) = @_; #$event->time
+    $gui{menuCtrAdd}->popup(undef, undef, undef, undef, 0, $event->time) if ($event->button == 1);
+    return 0;
+}
+
+# Sets a specific port count if manually set by the user
+sub storage_port_count {
+    my $storref = &getsel_list_editstorage();
+    my $pc = int($gui{adjustmentEditStorPortCount}->get_value());
+    IStorageController_setPortCount($$storref{IStorageController}, $pc);
+}
+
+# Flags a hard disk image as being SSD
+sub storage_ssd {
+    my $storref = &getsel_list_editstorage();
+    IMachine_nonRotationalDevice($vmc{IMachine}, $$storref{ControllerName}, $$storref{Port}, $$storref{Device}, $gui{checkbuttonEditStorSSD}->get_active());
+}
+
+# Flags whether a CD/DVD is allowed to be temporary ejected (ie Live CD)
+sub storage_livecd {
+    my $storref = &getsel_list_editstorage();
+    IMachine_temporaryEjectDevice($vmc{IMachine}, $$storref{ControllerName}, $$storref{Port}, $$storref{Device}, $gui{checkbuttonEditStorLive}->get_active());
+}
+
+# Flags whether a HD or Optical Device is hot pluggable
+sub storage_hot_pluggable {
+    my $storref = &getsel_list_editstorage();
+    IMachine_setHotPluggableForDevice($vmc{IMachine}, $$storref{ControllerName}, $$storref{Port}, $$storref{Device}, $gui{checkbuttonEditStorHotPluggable}->get_active());
+}
+
+# Flags whether the selected controller is bootable or not
+sub storage_controller_bootable {
+    my $storref = &getsel_list_editstorage();
+    IMachine_setStorageControllerBootable($vmc{IMachine}, $$storref{ControllerName}, $gui{checkbuttonEditStorControllerBootable}->get_active());
+}
+
+# Moves an attachment to a new port
+sub storage_connected_port {
+    my $newdevice = &getsel_combo($gui{comboboxEditStorDevPort}, 1);
+    my $newport = &getsel_combo($gui{comboboxEditStorDevPort}, 2);
+    my $storref = &getsel_list_editstorage();
+
+    unless ($newport == $$storref{Port} and $newdevice == $$storref{Device}) {
+        my @IMediumAttachment = IMachine_getMediumAttachmentsOfController($vmc{IMachine}, $$storref{ControllerName});
+        my $free = 1;
+        foreach my $attach (@IMediumAttachment) {
+            if ($$attach{port} == $newport and $$attach{device} == $newdevice) {
+                $free = 0;
+                &show_err_msg('existattach');
+                last;
+            }
+        }
+
+        if ($free) {
+            # SATA, SAS, NVMe support changing the ports
+            if ($$storref{Bus} eq 'SATA' or $$storref{Bus} eq 'SAS' or $$storref{Bus} eq 'PCIe') {
+            if (IStorageController_getPortCount($$storref{IStorageController}) < ($newport + 1)) {
+                IStorageController_setPortCount($$storref{IStorageController}, $newport + 1) ;
+            }
+            }
+            IMachine_detachDevice($vmc{IMachine}, $$storref{ControllerName}, $$storref{Port}, $$storref{Device});
+            IMachine_attachDevice($vmc{IMachine}, $$storref{ControllerName}, $newport, $newdevice, $$storref{MediumType}, $$storref{IMedium});
+            IMachine_saveSettings($vmc{IMachine});
+            &addrow_log("Settings implicitly saved for $vmc{Name} due to storage attachment.");
+            &fill_list_editstorage($vmc{IMachine});
+        }
+    }
+}
+
+# Sets the sensitive of widgets if no storage item is selected
+sub sens_editstor_nosel {
+    $gui{frameEditStorAttr}->hide(); # Hides all the attributed widgets in one go
+    $gui{buttonEditStorAddAttach}->set_sensitive(0);
+    $gui{buttonEditStorRemoveAttach}->set_sensitive(0);
+    $gui{buttonEditStorRemoveCtr}->set_sensitive(0);
+}
+
+1;
