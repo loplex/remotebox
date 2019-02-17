@@ -150,7 +150,7 @@ sub show_dialog_editnat {
 
         if ($response eq 'ok') {
             # Other entries do not require validation
-            if (!$gui{entryvbprefsNATName}->get_text()) { &show_err_msg('invalidname', '(Network Name)'); }
+            if (!$gui{entryvbprefsNATName}->get_text()) { &show_err_msg('invalidname'); }
             elsif (!&valid_cidr($gui{entryvbprefsNATCIDR}->get_text())) { &show_err_msg('invalidipv4cidr', '(Network CIDR)'); }
             else {
                 $gui{dialogNATDetails}->hide;
@@ -176,7 +176,7 @@ sub show_dialog_pf4 {
 
         if ($response eq 'ok') {
             # No validation needed for other entries
-            if (!$gui{entryPFIPv4Name}->get_text()) { &show_err_msg('invalidname', '(Portforwarding rule name)'); }
+            if (!$gui{entryPFIPv4Name}->get_text()) { &show_err_msg('invalidname'); }
             elsif (!valid_ipv4($gui{entryPFIPv4HostIP}->get_text())) { &show_err_msg('invalidipv4address', '(Host IP)'); }
             elsif (!valid_ipv4($gui{entryPFIPv4GuestIP}->get_text())) { &show_err_msg('invalidipv4address', '(Guest IP)'); }
             else {
@@ -289,22 +289,30 @@ sub show_dialog_vbprefs {
     $gui{entryVBPrefsGenAutostartDBFolder}->set_text($$vhost{autostartdb});
     $gui{entryVBPrefsGenVRDPAuth}->set_text($$vhost{vrdelib});
     $gui{checkbuttonVBPrefsHWExclusive}->set_active(&bl($$vhost{hwexclusive}));
-    &fill_list_vbprefshon();
-    &fill_list_vbprefsnat();
-    $gui{dialogVBPrefs}->run();
+    my $response = $gui{dialogVBPrefs}->run();
     $gui{dialogVBPrefs}->hide();
 
-    my $machinedir = $gui{entryVBPrefsGenMachineFolder}->get_text();
-    my $autostartdir = $gui{entryVBPrefsGenAutostartDBFolder}->get_text();
-    my $vrdelib = $gui{entryVBPrefsGenVRDPAuth}->get_text();
-    $vrdelib =~ s/\.dll$//i;
-    $vrdelib =~ s/\.so$//i;
-    ISystemProperties_setDefaultMachineFolder($$vhost{ISystemProperties}, $machinedir) if ($machinedir ne $$vhost{machinedir});
-    ISystemProperties_setVRDEAuthLibrary($$vhost{ISystemProperties}, $vrdelib) if ($vrdelib ne $$vhost{vrdelib});
-    ISystemProperties_setAutostartDatabasePath($$vhost{ISystemProperties}, $autostartdir) if ($autostartdir ne $$vhost{autostartdb});
-    if ($gui{checkbuttonVBPrefsHWExclusive}->get_active()) { ISystemProperties_setExclusiveHwVirt($$vhost{ISystemProperties}, 'true'); }
-    else { ISystemProperties_setExclusiveHwVirt($$vhost{ISystemProperties}, 'false'); }
-    &clr_vhost(); # VB Prefs changes can potentially alter vhost values, so clear them to be repopulated
+    if ($response eq 'ok') {
+        my $machinedir = $gui{entryVBPrefsGenMachineFolder}->get_text();
+        my $autostartdir = $gui{entryVBPrefsGenAutostartDBFolder}->get_text();
+        my $vrdelib = $gui{entryVBPrefsGenVRDPAuth}->get_text();
+        $vrdelib =~ s/\.dll$//i;
+        $vrdelib =~ s/\.so$//i;
+        ISystemProperties_setDefaultMachineFolder($$vhost{ISystemProperties}, $machinedir) if ($machinedir ne $$vhost{machinedir});
+        ISystemProperties_setVRDEAuthLibrary($$vhost{ISystemProperties}, $vrdelib) if ($vrdelib ne $$vhost{vrdelib});
+        ISystemProperties_setAutostartDatabasePath($$vhost{ISystemProperties}, $autostartdir) if ($autostartdir ne $$vhost{autostartdb});
+        if ($gui{checkbuttonVBPrefsHWExclusive}->get_active()) { ISystemProperties_setExclusiveHwVirt($$vhost{ISystemProperties}, 'true'); }
+        else { ISystemProperties_setExclusiveHwVirt($$vhost{ISystemProperties}, 'false'); }
+        &clr_vhost(); # VB Prefs changes can potentially alter vhost values, so clear them to be repopulated
+    }
+}
+
+# Shows the Host Network Manager dialog
+sub show_dialog_hostnetman {
+    &fill_list_vbprefshon();
+    &fill_list_vbprefsnat();
+    $gui{dialogHostNetMan}->run();
+    $gui{dialogHostNetMan}->hide();
 }
 
 # Shows the dialog for managing connection profiles
@@ -313,7 +321,6 @@ sub show_dialog_profiles {
     $gui{dialogProfiles}->hide;
     &rbprofiles_save();
 }
-
 
 sub show_dialog_edithon {
     my $ifref = &getsel_list_vbprefshon();
@@ -387,7 +394,7 @@ sub vbprefs_reset {
 sub vbprefs_createhon {
     my $IHost = IVirtualBox_getHost($gui{websn});
     my ($hostinterface, $IProgress) = IHost_createHostOnlyNetworkInterface($IHost);
-    &show_progress_window($IProgress, 'Adding host only network');
+    &show_progress_window($IProgress, 'Adding host only network', $gui{img}{ProgressNetwork});
     &fill_list_vbprefshon();
 }
 
@@ -476,23 +483,14 @@ sub show_vncpreset_menu {
 
 # Updates the RDP widget with the selected preset
 sub set_rdppreset {
-    my ($widget) = @_;
-
-    if ($widget eq $gui{menuitemrdppreset1}) { $gui{entryPrefsRDPClient}->set_text('xfreerdp /size:%Xx%Y /bpp:32 +clipboard /sound /t:"%n - RemoteBox" /v:%h:%p'); }
-    elsif ($widget eq $gui{menuitemrdppreset2}) { $gui{entryPrefsRDPClient}->set_text('xfreerdp -g %Xx%Y --plugin cliprdr --plugin rdpsnd -T "%n - RemoteBox" %h:%p'); }
-    elsif ($widget eq $gui{menuitemrdppreset3}) { $gui{entryPrefsRDPClient}->set_text('rdesktop -r sound:local -r clipboard:PRIMARYCLIPBOARD -T "%n - RemoteBox" %h:%p'); }
-    elsif ($widget eq $gui{menuitemrdppreset4}) { $gui{entryPrefsRDPClient}->set_text('krdc rdp://%h:%p'); }
-    elsif ($widget eq $gui{menuitemrdppreset5}) { $gui{entryPrefsRDPClient}->set_text('mstsc /w:%X /h:%Y /v:%h:%p'); }
+    my ($widget, $command) = @_;
+    $gui{entryPrefsRDPClient}->set_text($command);
 }
 
 # Updates the VNC entry widget with the selected preset
 sub set_vncpreset {
-    my ($widget) = @_;
-
-    if ($widget eq $gui{menuitemvncpreset1}) { $gui{entryPrefsVNCClient}->set_text('vncviewer -Shared -AcceptClipboard -SetPrimary -SendClipboard -SendPrimary -RemoteResize -DesktopSize %Xx%Y  %h::%p'); }
-    elsif ($widget eq $gui{menuitemvncpreset2}) { $gui{entryPrefsVNCClient}->set_text('vncviewer -Shared -ClientCutText -SendPrimary -ServerCutText %h::%p'); }
-    elsif ($widget eq $gui{menuitemvncpreset3}) { $gui{entryPrefsVNCClient}->set_text('vinagre --geometry=%Xx%Y %h::%p'); }
-    elsif ($widget eq $gui{menuitemvncpreset4}) { $gui{entryPrefsVNCClient}->set_text('krdc vnc://%h:%p'); }
+    my ($widget, $command) = @_;
+    $gui{entryPrefsVNCClient}->set_text($command);
 }
 
 1;

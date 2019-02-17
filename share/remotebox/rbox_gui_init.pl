@@ -94,7 +94,27 @@ $gui{img}{CatIO} = Gtk2::Gdk::Pixbuf->new_from_file("$sharedir/icons/serial_port
 $gui{img}{CatUSB} = Gtk2::Gdk::Pixbuf->new_from_file("$sharedir/icons/usb_16px.png");
 $gui{img}{CatShare} = Gtk2::Gdk::Pixbuf->new_from_file("$sharedir/icons/sf_16px.png");
 $gui{img}{CatDesc} = Gtk2::Gdk::Pixbuf->new_from_file("$sharedir/icons/description_16px.png");
-
+# Progress Decals
+$gui{img}{ProgressClone} = Gtk2::Gdk::Pixbuf->new_from_file("$sharedir/icons/progress_clone_90px.png");
+$gui{img}{ProgressRefresh} = Gtk2::Gdk::Pixbuf->new_from_file("$sharedir/icons/progress_refresh_90px.png");
+$gui{img}{ProgressDelete} = Gtk2::Gdk::Pixbuf->new_from_file("$sharedir/icons/progress_delete_90px.png");
+$gui{img}{ProgressExport} = Gtk2::Gdk::Pixbuf->new_from_file("$sharedir/icons/progress_export_90px.png");
+$gui{img}{ProgressImport} = Gtk2::Gdk::Pixbuf->new_from_file("$sharedir/icons/progress_import_90px.png");
+$gui{img}{ProgressInstallGA} = Gtk2::Gdk::Pixbuf->new_from_file("$sharedir/icons/progress_install_guest_additions_90px.png");
+$gui{img}{ProgressMediaCreate} = Gtk2::Gdk::Pixbuf->new_from_file("$sharedir/icons/progress_media_create_90px.png");
+$gui{img}{ProgressMediaDelete} = Gtk2::Gdk::Pixbuf->new_from_file("$sharedir/icons/progress_media_delete_90px.png");
+$gui{img}{ProgressMediaMove} = Gtk2::Gdk::Pixbuf->new_from_file("$sharedir/icons/progress_media_move_90px.png");
+$gui{img}{ProgressMediaResize} = Gtk2::Gdk::Pixbuf->new_from_file("$sharedir/icons/progress_media_resize_90px.png");
+$gui{img}{ProgressNetwork} = Gtk2::Gdk::Pixbuf->new_from_file("$sharedir/icons/progress_network_interface_90px.png");
+$gui{img}{ProgressPowerOff} = Gtk2::Gdk::Pixbuf->new_from_file("$sharedir/icons/progress_poweroff_90px.png");
+$gui{img}{ProgressReadAppl} = Gtk2::Gdk::Pixbuf->new_from_file("$sharedir/icons/progress_reading_appliance_90px.png");
+$gui{img}{ProgressSettings} = Gtk2::Gdk::Pixbuf->new_from_file("$sharedir/icons/progress_settings_90px.png");
+$gui{img}{ProgressSnapshotCreate} = Gtk2::Gdk::Pixbuf->new_from_file("$sharedir/icons/progress_snapshot_create_90px.png");
+$gui{img}{ProgressSnapshotDiscard} = Gtk2::Gdk::Pixbuf->new_from_file("$sharedir/icons/progress_snapshot_discard_90px.png");
+$gui{img}{ProgressSnapshotRestore} = Gtk2::Gdk::Pixbuf->new_from_file("$sharedir/icons/progress_snapshot_restore_90px.png");
+$gui{img}{ProgressStart} = Gtk2::Gdk::Pixbuf->new_from_file("$sharedir/icons/progress_start_90px.png");
+$gui{img}{ProgressRestore} = Gtk2::Gdk::Pixbuf->new_from_file("$sharedir/icons/progress_state_restore_90px.png");
+$gui{img}{ProgressStateSave} = Gtk2::Gdk::Pixbuf->new_from_file("$sharedir/icons/progress_state_save_90px.png");
 our %prefs;
 
 # Fill %gui so we can reference them easily.
@@ -108,8 +128,8 @@ foreach ($builder->get_objects) {
 # as blocking any other way is not supported in perl-gtk (other blocking funcs map to null funcs)
 our %signal = (fam                => $gui{comboboxNewOSFam}->signal_connect(changed => \&newgen_osfam, $gui{comboboxNewOSVer}),
                ver                => $gui{comboboxNewOSVer}->signal_connect(changed => \&newgen_osver, $gui{comboboxNewOSFam}),
-               famedit            => $gui{comboboxEditGenOSFam}->signal_connect(changed => \&gen_osfam, $gui{comboboxEditGenOSVer}),
-               veredit            => $gui{comboboxEditGenOSVer}->signal_connect(changed => \&gen_osver, $gui{comboboxEditGenOSFam}),
+               famedit            => $gui{comboboxEditGenOSFam}->signal_connect(changed => \&gen_basic_os_family, $gui{comboboxEditGenOSVer}),
+               veredit            => $gui{comboboxEditGenOSVer}->signal_connect(changed => \&gen_basic_os_version, $gui{comboboxEditGenOSFam}),
                audiodrv           => $gui{comboboxEditAudioDriver}->signal_connect(changed => \&audio_driver),
                audioctr           => $gui{comboboxEditAudioCtr}->signal_connect(changed => \&audio_ctr),
                audiocodec         => $gui{comboboxEditAudioCodec}->signal_connect(changed => \&audio_codec),
@@ -118,21 +138,93 @@ our %signal = (fam                => $gui{comboboxNewOSFam}->signal_connect(chan
                netname            => $gui{comboboxEditNetName}->signal_connect(changed => \&net_name, $gui{checkbuttonEditNetEnable}),
                genericdrv         => $gui{comboboxentryEditNetGenDriver}->signal_connect(changed => \&net_generic_driver, $gui{checkbuttonEditNetEnable}),
                nameint            => $gui{comboboxentryEditNetNameInt}->signal_connect(changed => \&net_name_internal, $gui{checkbuttonEditNetEnable}),
-               stortype           => $gui{comboboxEditStorCtrType}->signal_connect(changed => \&storage_ctrtype),
+               stortype           => $gui{comboboxEditStorCtrType}->signal_connect(changed => \&storage_ctr_type),
                usbtoggle          => $gui{checkbuttonEditUSBEnable}->signal_connect(toggled => \&usb_toggle),
                snapfolderactivate => $gui{entryEditGenSnapFolder}->signal_connect(activate => \&gen_snapfolder),
                snapfolderfocus    => $gui{entryEditGenSnapFolder}->signal_connect(activate => \&gen_snapfolder));
 
-# Work around a stupid bug in Glade 3.10.x that disables toolbutton menus
+# Work around a bug in Glade that disables toolbutton menus
 $gui{toolbuttonStop}->set_menu($gui{menuStop});
 $gui{toolbuttonCAD}->set_menu($gui{menuKeyboardMini});
 
-# Work around another bug in Glade, setting selection mode does not work
+# Work around a bug in Glade. Setting selection mode does not work
 $gui{treeviewInfo}->get_selection->set_mode('GTK_SELECTION_NONE');
-$gui{treeviewEvalConfig}->get_selection->set_mode('GTK_SELECTION_NONE');
+
+# Populate the submenu for the screensize video hinting
+my $scr_res_tbl = &get_scr_res_tbl();
+foreach my $res (@{$scr_res_tbl}) {
+    $gui{'menuitemSetVideo' . "$$res{w}_$$res{h}"} = Gtk2::MenuItem->new_with_label($$res{w} . 'x' . $$res{h} . ":32 ($$res{aspx}:$$res{aspy})");
+    $gui{'menuitemSetVideo' . "$$res{w}_$$res{h}"}->signal_connect(activate => \&send_video_hint, [$$res{w}, $$res{h}, 32]);
+    $gui{'menuitemSetVideo' . "$$res{w}_$$res{h}"}->show();
+    $gui{'menuitemSetVideo' . "$$res{w}_$$res{h}"}->set_tooltip_text('Requires a minimum of ' . &vram_needed($$res{w}, $$res{h}, 32) . 'MB of video memory assigned to the guest');
+    $gui{menuSetVideo}->append($gui{'menuitemSetVideo' . "$$res{w}_$$res{h}"});
+}
+
+# Populate the liststore for the framesize for video capture
+my $fsiter;
+foreach my $res (@{$scr_res_tbl}) {
+    $fsiter = $gui{liststoreDispCaptureSize}->append;
+    $gui{liststoreDispCaptureSize}->set($fsiter, 0, "$$res{w}x$$res{h} ($$res{aspx}:$$res{aspy})", 1, $$res{w}, 2, $$res{h});
+}
+
+# Populate the keyboard sequence menus
+my $cafx_code_tbl = &get_cafx_code_tbl();
+foreach my $code (@{$cafx_code_tbl}) {
+    $gui{'menuitemKeyboard' . $$code{desc}} = Gtk2::MenuItem->new_with_label($$code{desc});
+    $gui{'menuitemKeyboard' . $$code{desc}}->signal_connect(activate => \&keyboard_send, $code);
+    $gui{'menuitemKeyboard' . $$code{desc}}->show();
+    $gui{menuKeyboardCAF}->append($gui{'menuitemKeyboard' . $$code{desc}});
+}
+
+my $asfx_code_tbl = &get_asfx_code_tbl();
+foreach my $code (@{$asfx_code_tbl}) {
+    $gui{'menuitemKeyboard' . $$code{desc}} = Gtk2::MenuItem->new_with_label($$code{desc});
+    $gui{'menuitemKeyboard' . $$code{desc}}->signal_connect(activate => \&keyboard_send, $code);
+    $gui{'menuitemKeyboard' . $$code{desc}}->show();
+    $gui{menuKeyboardASF}->append($gui{'menuitemKeyboard' . $$code{desc}});
+}
+
+$gui{menuitemKeyboardCAD} = Gtk2::MenuItem->new_with_label('Ctrl-Alt-Delete');
+$gui{menuitemKeyboardCAD}->signal_connect(activate => \&keyboard_CAD);
+$gui{menuitemKeyboardCAD}->show();
+$gui{menuKeyboard}->append($gui{menuitemKeyboardCAD});
+
+my $misc_code_tbl = &get_misc_code_tbl();
+foreach my $code (@{$misc_code_tbl}) {
+    $gui{'menuitemKeyboard' . $$code{desc}} = Gtk2::MenuItem->new_with_label($$code{desc});
+    $gui{'menuitemKeyboard' . $$code{desc}}->signal_connect(activate => \&keyboard_send, $code);
+    $gui{'menuitemKeyboard' . $$code{desc}}->show();
+    $gui{menuKeyboard}->append($gui{'menuitemKeyboard' . $$code{desc}});
+    $gui{'menuitemKeyboardMini' . $$code{desc}} = Gtk2::MenuItem->new_with_label($$code{desc});
+    $gui{'menuitemKeyboardMini' . $$code{desc}}->signal_connect(activate => \&keyboard_send, $code);
+    $gui{'menuitemKeyboardMini' . $$code{desc}}->show();
+    $gui{menuKeyboardMini}->append($gui{'menuitemKeyboardMini' . $$code{desc}});
+}
+
+$gui{menuitemKeyboardRK} = Gtk2::MenuItem->new_with_label('Release Keys');
+$gui{menuitemKeyboardRK}->signal_connect(activate => \&keyboard_releasekeys);
+$gui{menuitemKeyboardRK}->show();
+$gui{menuKeyboard}->append($gui{menuitemKeyboardRK});
+
+# Populate RDP/VNC preset menus
+my $rdp_preset_tbl = &get_rdp_preset_tbl();
+foreach my $preset (@{$rdp_preset_tbl}) {
+    $gui{'menuitemRDPPreset' . $$preset{num}} = Gtk2::MenuItem->new_with_label($$preset{desc});
+    $gui{'menuitemRDPPreset' . $$preset{num}}->signal_connect(activate => \&set_rdppreset, $$preset{command});
+    $gui{'menuitemRDPPreset' . $$preset{num}}->show();
+    $gui{menuRDPPreset}->append($gui{'menuitemRDPPreset' . $$preset{num}});
+}
+
+my $vnc_preset_tbl = &get_vnc_preset_tbl();
+foreach my $preset (@{$vnc_preset_tbl}) {
+    $gui{'menuitemVNCPreset' . $$preset{num}} = Gtk2::MenuItem->new_with_label($$preset{desc});
+    $gui{'menuitemVNCPreset' . $$preset{num}}->signal_connect(activate => \&set_vncpreset, $$preset{command});
+    $gui{'menuitemVNCPreset' . $$preset{num}}->show();
+    $gui{menuVNCPreset}->append($gui{'menuitemVNCPreset' . $$preset{num}});
+}
 
 # Transient Window Handling
-# A windows transient is automatically set on open
+# A window's transient is automatically set on open
 {
     my @winlist = ($gui{windowMain});
 
@@ -177,7 +269,7 @@ sub handle_bioslogofilechooser {
     my ($basedir, $filename) = @_;
     if ($basedir and $filename) {
         $gui{entryEditSysLogoPath}->set_text(&rcatfile($basedir, $filename));
-        &sys_bioslogopath();
+        &sys_logo_path();
     }
 }
 
@@ -185,7 +277,7 @@ sub handle_videofilechooser {
     my ($basedir, $filename) = @_;
     if ($basedir and $filename) {
         $gui{entryEditDispCapturePath}->set_text(&rcatfile($basedir, $filename));
-        &sys_capturepath();
+        &disp_cap_path();
     }
 }
 
@@ -252,11 +344,8 @@ sub handle_vboxfilechooser {
 # Handle select the appliance file to export to from the file chooser
 sub handle_exportapplfilechooser {
     my ($basedir, $filename) = @_;
-
-    if ($basedir and $filename) {
-        $filename .= '.ova' if ($filename !~ m/.ovf$/i and $filename !~ m/.ova$/i);
-        $gui{entryExportApplFile}->set_text(&rcatfile($basedir, $filename));
-    }
+    # Since VB 6.0.0 the extension seems to get automatically added so we no longer do it here
+    $gui{entryExportApplFile}->set_text(&rcatfile($basedir, $filename)) if ($basedir and $filename);
 }
 
 # Handles appliance files and imports them
@@ -453,11 +542,12 @@ sub cdup_remotefilechooser {
 
 # Display a progress window for tasks which can take a long time
 sub show_progress_window {
-    my ($IProgress, $msg) = @_;
+    my ($IProgress, $msg, $decal) = @_;
     my $resultcode = 0;
     my $timer = 0;
+    $decal ? $gui{imageProgressBig}->set_from_pixbuf($decal) : $gui{imageProgressBig}->set_from_pixbuf($gui{img}{ProgressSettings});
     $gui{dialogProgress}->set_title($msg);
-    $gui{labelProgress}->set_text(''); # Reset text so its not cached from a previous call
+    $gui{labelProgress}->set_text('Please Wait...'); # Reset text so its not cached from a previous call
     $gui{progressbar}->set_text(''); # Reset text so its not cached from a previous call
     $gui{progressbar}->set_fraction(0); # Reset fraction back to 0
     (IProgress_getCancelable($IProgress) eq 'true') ? $gui{buttonProgressCancel}->show() : $gui{buttonProgressCancel}->hide();
@@ -575,24 +665,8 @@ sub valid_ipv4 {
     return 1 if ($_[0] =~ m/^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/);
 }
 
-# Is it a valid IPv6 address. Needs fixing
+# FIXME Is it a valid IPv6 address.
 sub valid_ipv6 { return 1; }
-
-sub combobox_set_active_text {
-    my ($combobox, $text) = @_;
-    my $i = -1;
-    $combobox->get_model->foreach (
-                            sub {
-                                my ($model, $path, $iter) = @_;
-                                if ($text eq $model->get_value($iter, 0)) {
-                                    ($i) = $path->get_indices;
-                                    return 1; # stop
-                                }
-                                return 0; # continue
-                            }
-                          );
-    $combobox->set_active($i);
-}
 
 # Adds appropriate units to a spinbox when specifying memory or disk
 sub spinbox_bytes_out {
@@ -717,58 +791,6 @@ sub spinbox_pc_in {
     }
 
     return 0;
-}
-
-# Callback set on a timer to attempt to keep the connection alive in the
-# case where a timeout is set on the server. This callback needs to be cheap
-sub heartbeat {
-    IVirtualBox_getVersion($gui{websn}) if ($gui{websn});
-    return 1; # Return 1 to stop the timer from being removed
-}
-
-sub secs_to_humantime {
-    my ($time) = @_;
-    my $hours = int($time / 3600);
-    $time -= ($hours * 3600);
-    my $mins = int($time / 60);
-    my $secs = $time % 60;
-    $hours = '0' . $hours if ($hours < 10);
-    $mins = '0' . $mins if ($mins < 10);
-    $secs = '0' . $secs if ($secs < 10);
-
-    return "$hours:$mins:$secs";
-}
-
-# Returns truth according to virtualbox which can take the form of
-# null, Null, False, false (being 0) and True, true being 1
-sub bl { ($_[0] =~ m/^[t|T]/) // return 1 }
-
-# Converts a path to its canonical form
-sub rcanonpath {
-    my $vhost = &vhost();
-    unless ($$vhost{os} =~ m/^WINDOWS/i) { return File::Spec::Unix->canonpath(@_); }
-    else { return File::Spec::Win32->canonpath(@_); }
-}
-
-# Concatenates a file onto a path
-sub rcatfile {
-    my $vhost = &vhost();
-    unless ($$vhost{os} =~ m/^WINDOWS/i) { return File::Spec::Unix->catfile(@_); }
-    else { return File::Spec::Win32->catfile(@_); }
-}
-
-# Concatenates a dir onto a path
-sub rcatdir {
-    my $vhost = &vhost();
-    unless ($$vhost{os} =~ m/^WINDOWS/i) { return File::Spec::Unix->catdir(@_); }
-    else { return File::Spec::Win32->catdir(@_); }
-}
-
-# Splits a path into volume, dir, file
-sub rsplitpath {
-    my $vhost = &vhost();
-    unless ($$vhost{os} =~ m/^WINDOWS/i) { return File::Spec::Unix->splitpath(@_); }
-    else { return File::Spec::Win32->splitpath(@_); }
 }
 
 1;

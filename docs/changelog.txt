@@ -1,3 +1,35 @@
+2.6 (06 Jan 2019)
+-----------------
+
+- RemoteBox now requires VirtualBox 6.0.x
+- Added additional screen modes for video capture and video hinting
+- Added option to select between Video and Audio, Video Only or Audio Only when
+  screen capturing
+- Added support for VirtualBox VGA card with VMware SVGA II extensions
+- Added support for having no graphics card in the guest. Note however, you
+  cannot connect to the guest with RDP/VNC without a virtual graphics card.
+- Added support for setting the emulated serial UART type
+- The Audio Input and Audio Output options can now also be set while the guest
+  is running
+- Added support to the VMM (Virtual Media Manager) for compaction of hard disk
+  images to reduce their physical size
+- Added support to the VMM (Virtual Media Manager) for resizing hard disk
+  images
+- Added ability to save a guest log to a local text file
+- Added refresh button to reload the guest logs in the log viewer
+- Added cancel button to the VirtualBox Preferences dialog
+- Removed Host-Only-Network and NAT Network configuration from the VirtualBox
+  preferences dialog and created the Host Network Manager dialog accessible from
+  the file menu
+- Signnificantly updated the RemoteBox icon set and added additional decals
+- To work around a VirtualBox bug, when changing a shared folder the guest
+  settings are now explicitly saved. This includes adding, editing and deleting
+- Optimised a lot of the settings retrieval code which should improve latency
+  especially for those on slower systems and networks.
+- Fixed the Edit Shared Folder dialog not correctly showing a share's Permanent
+  Status, when editing the shared folder.
+- Various code cleanups
+
 2.5 (29 Apr 2018)
 -----------------
 
@@ -13,7 +45,7 @@
   additions ISO
 - Added support for VNC. If your server has the VNC extension pack installed,
   you can use VNC to connect to the guest displays instead of RDP. You must
-  install a VNC client on your RemoteBox machine and configured it as
+  install a VNC client on your RemoteBox machine and configure it as
   appropriate in your preferences. TigerVNC is the default client
 - The guest display icon now shows whether the server expects a VNC or RDP
   connection when opening the display of guests.

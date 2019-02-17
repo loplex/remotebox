@@ -7,7 +7,7 @@ wants to create an RPM, DEB, PKG or other type of package.
 Example SPEC File
 -----------------
 There is an example SPEC file located in this directory which can be used to
-build an RPM of RemoteBox on Fedora. It may require modification to build 
+build an RPM of RemoteBox on Fedora. It may require modification to build
 correctly on other RPM based distributions. The SPEC file generates its own
 .desktop file, but a separate example .desktop file is also included.
 
@@ -27,22 +27,20 @@ RemoteBox has the following software dependencies:
 * SOAP::Lite perl module
 * libwww-perl perl modules (usually depended on by the SOAP::Lite module)
 * perl-Gtk2 perl modules
-* FreeRDP (default) or rdesktop
-    - RemoteBox will function (except remote display) without an RDP client but
-      can be easily patched to use an alernative RDP client as the default. The
-      user can of course configure their client of choice. Due to
-      imcompatibilities with VirtualBox, rdesktop v1.8.1 and v1.8.2 should be
-      avoided where possible and FreeRDP used instead. On Windows the default
-      client is the mtstc as supplied with Windows
+* FreeRDP (default) or rdesktop (or TigerVNC for systems only support VNC servers)
+    - RemoteBox will function (except remote display) without an RDP/VNC client but
+      can be easily patched to use an alernative RDP/VNC client as the default. The
+      user can of course configure their client of choice. On Windows the default
+      RDP client is the mtstc as supplied with Windows. The default VNC client is TigerVNC
 * xdg-utils
     - RemoteBox uses the xdg-open command simply to display the PDF manual and
       will be functional without it. RemoteBox can be easily patched to use
       an alternative viewer. Note RemoteBox on Mac OS X uses the 'open' command
       instead and Windows uses the 'start' command
 
-Depending on your packaging manager, you do not necessarily need to make all 
+Depending on your packaging manager, you do not necessarily need to make all
 these explicit dependencies in your package. For example, most packaging
-systems would ensure Perl was installed if a package required perl-Gtk2. 
+systems would ensure Perl was installed if a package required perl-Gtk2.
 
 
 Patching RemoteBox
@@ -51,7 +49,7 @@ Patching RemoteBox
    require installation but is also intended to be easily packaged for a
    system-wide installation. You may need to patch the following two lines in
    the main executable file called 'remotebox'. Note '$Bin' is a special
-   variable which expands to the directory remotebox ran from. 
+   variable which expands to the directory remotebox ran from.
 
        our $sharedir = "$Bin/share/remotebox";
        our $docdir   = "$Bin/docs";

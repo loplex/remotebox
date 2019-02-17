@@ -358,7 +358,7 @@ sub fill_list_editshared {
 sub fill_list_editstorage {
     my ($IMachine) = @_;
     &busy_pointer($gui{dialogEdit}, 1);
-    &sens_editstor_nosel();
+    &storage_sens_nosel();
     $gui{treestoreEditStor}->clear();
     my @IStorageController = IMachine_getStorageControllers($IMachine);
 
@@ -521,17 +521,20 @@ sub addrow_log {
 
 # Adds a row to the editshared list
 sub addrow_editshared {
-    my ($share, $permanent) = @_;
+    my ($ISharedFolder, $permanent) = @_;
+    my $shrname = ISharedFolder_getName($ISharedFolder);
+    my $shrpath = ISharedFolder_getHostPath($ISharedFolder);
+    my $shrerror = ISharedFolder_getLastAccessError($ISharedFolder);
+    my $shraccessible = ISharedFolder_getAccessible($ISharedFolder);
     my $access = 'Full';
     my $automount = 'No';
-    my $tooltip = "$$share{name}: $$share{hostPath}";
-    $access = 'Read-Only' if ($$share{writable} eq 'false');
-    $automount = 'Yes' if ($$share{autoMount} eq 'true');
-    $tooltip = $$share{lastAccessError} if ($$share{lastAccessError});
-    $tooltip = 'Share is not accessible' if ($$share{accessible} eq 'false');
+    my $tooltip = ($shrerror) ? $shrerror : "$shrname ($shrpath)";
+    $tooltip .= ($shraccessible eq 'false') ? ' : Share is not accessible' : '';
+    $access = 'Read-Only' if (ISharedFolder_getWritable($ISharedFolder) eq 'false');
+    $automount = 'Yes' if (ISharedFolder_getAutoMount($ISharedFolder) eq 'true');
     my $iter = $gui{liststoreEditShared}->append;
-    if ($$share{accessible} eq 'false') { $gui{liststoreEditShared}->set($iter, 0, $$share{name}, 1, $$share{hostPath}, 2, $access, 3, $automount, 4, $gui{img}{Error}, 5, $tooltip, 6, $permanent); }
-    else { $gui{liststoreEditShared}->set($iter, 0, $$share{name}, 1, $$share{hostPath}, 2, $access, 3, $automount, 5, $tooltip, 6, $permanent); }
+    if ($shraccessible eq 'false') { $gui{liststoreEditShared}->set($iter, 0, $shrname, 1, $shrpath, 2, $access, 3, $automount, 4, $gui{img}{Error}, 5, $tooltip, 6, $permanent); }
+    else { $gui{liststoreEditShared}->set($iter, 0, $shrname, 1, $shrpath, 2, $access, 3, $automount, 5, $tooltip, 6, $permanent); }
 }
 
 sub addrow_info {
@@ -546,6 +549,8 @@ sub addrow_ec {
     return $iter;
 }
 
+# Returns the contents of the chosen column of the selected combobox row or
+# returns the row iterator if no column is chosen
 sub getsel_combo {
     my ($widget, $col) = @_;
     my $model = $widget->get_model();
@@ -553,6 +558,23 @@ sub getsel_combo {
 
     if (defined($col)) { return $model->get($iter, $col); }
     else { return $model->get($iter); }
+}
+
+# Sets the combobox active to the chosen text in the chosen column
+sub combobox_set_active_text {
+    my ($combobox, $txt, $col) = @_;
+    my $i = 0;
+    $combobox->get_model->foreach (
+                            sub {
+                                my ($model, $path, $iter) = @_;
+                                if ($txt eq $model->get_value($iter, $col)) {
+                                    ($i) = $path->get_indices;
+                                    return 1; # stop
+                                }
+                                return 0; # continue
+                            }
+                          );
+    $combobox->set_active($i);
 }
 
 # Handles single and multiple selections
@@ -741,7 +763,7 @@ sub onsel_list_editstorage {
             $gui{comboboxEditStorCtrType}->set_model($gui{liststoreEditStorFloppyCtrType});
         }
 
-        &combobox_set_active_text($gui{comboboxEditStorCtrType}, $variant);
+        &combobox_set_active_text($gui{comboboxEditStorCtrType}, $variant, 0);
         $gui{comboboxEditStorCtrType}->signal_handler_unblock($signal{stortype});
     }
     else { # This is a medium, not a controller
@@ -893,6 +915,7 @@ sub onsel_list_editstorage {
         $selected{$_} = shift @row foreach ('Name', 'IMedium', 'Size', 'Accessible', 'Tooltip', 'Location', 'Type');
         $gui{toolbuttonVMMCopy}->set_sensitive(0);
         $gui{toolbuttonVMMModify}->set_sensitive(0);
+        $gui{toolbuttonVMMCompact}->set_sensitive(0);
 
         my $gnames;
         my @mids = IMedium_getMachineIds($selected{IMedium});
@@ -991,6 +1014,7 @@ sub onsel_list_editstorage {
         $selected{$_} = shift @row foreach ('Name', 'IMedium', 'Size', 'Accessible', 'Tooltip', 'Location', 'Type');
         $gui{toolbuttonVMMCopy}->set_sensitive(0);
         $gui{toolbuttonVMMModify}->set_sensitive(0);
+        $gui{toolbuttonVMMCompact}->set_sensitive(0);
 
         my $gnames;
         my @mids = IMedium_getMachineIds($selected{IMedium});
@@ -1140,9 +1164,10 @@ sub onsel_list_editstorage {
         my $model = $gui{treeviewVMMHD}->get_model();
         my $iter = $gui{treeviewVMMHD}->get_selection->get_selected() ? $gui{treeviewVMMHD}->get_selection->get_selected() : $model->get_iter_first();
         my @row = $model->get($iter);
-        $selected{$_} = shift @row foreach ('Name', 'IMedium', 'Asize', 'Vsize', 'Accessible', 'Tooltip', 'Location', 'Type');
+        $selected{$_} = shift @row foreach ('Name', 'IMedium', 'Asize', 'Vsize', 'Accessible', 'Tooltip', 'Location', 'Type', 'LsizeInt');
         $gui{toolbuttonVMMCopy}->set_sensitive(1);
         $gui{toolbuttonVMMModify}->set_sensitive(1);
+        $gui{toolbuttonVMMCompact}->set_sensitive(1);
 
         my $gnames;
         my @mids = IMedium_getMachineIds($selected{IMedium});
@@ -1211,7 +1236,8 @@ sub onsel_list_editstorage {
                                     4, $gui{img}{Error},
                                     5, $mattr{accesserr},
                                     6, $mattr{location},
-                                    7, $mattr{type});
+                                    7, $mattr{type},
+                                    8, $mattr{logsize});
         }
         else {
             $treestore->set($citer, 0, $mattr{name},
@@ -1220,7 +1246,8 @@ sub onsel_list_editstorage {
                                     3, &bytesToX($mattr{logsize}),
                                     5, $mattr{location}, # Tooltip can be location
                                     6, $mattr{location},
-                                    7, $mattr{type});
+                                    7, $mattr{type},
+                                    8, $mattr{logsize});
         }
 
         if (($IMedium eq $selected{IMedium})) {
@@ -1241,11 +1268,10 @@ sub set_vmm_fields {
     $gui{labelVMMLocationField}->set_text($$selected{Location});
 
     if (&imedium_has_property($$selected{IMedium}, 'CRYPT/KeyId')) { $gui{labelVMMEncryptedField}->set_text(IMedium_getProperty($$selected{IMedium}, 'CRYPT/#KeyId')); }
-    else { $gui{labelVMMEncryptedField}->set_text('Not Encrypted'); }
+    else { $gui{labelVMMEncryptedField}->set_text('<Not Encrypted>'); }
 
     $gui{labelVMMUUIDField}->set_text(IMedium_getId($$selected{IMedium}));
 }
-
 
 sub clr_list_vmm {
     my ($treestore) = @_;
@@ -1635,9 +1661,6 @@ sub onsel_list_shared {
             $prefs{AUTOCONNPROF} = '' if ( $prefs{AUTOCONNPROF} eq $gui{entryPrefsConnectionProfileName}->get_text() );
         }
     }
-
 }
-
-
 
 1;

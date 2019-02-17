@@ -128,10 +128,10 @@ sub SOAP::Serializer::as_DhcpOpt {
     return [$name, {'xsi:type' => 'vbox:DhcpOpt', %$attr}, $value];
 }
 
-sub SOAP::Serializer::as_DirectoryCopyFlags {
+sub SOAP::Serializer::as_DirectoryCopyFlag {
     my $self = shift;
     my ($value, $name, $type, $attr) = @_;
-    return [$name, {'xsi:type' => 'vbox:DirectoryCopyFlags', %$attr}, $value];
+    return [$name, {'xsi:type' => 'vbox:DirectoryCopyFlag', %$attr}, $value];
 }
 
 sub SOAP::Serializer::as_DirectoryCreateFlag {
@@ -194,10 +194,10 @@ sub SOAP::Serializer::as_FileOpenAction {
     return [$name, {'xsi:type' => 'vbox:FileOpenAction', %$attr}, $value];
 }
 
-sub SOAP::Serializer::as_FileOpenExFlags {
+sub SOAP::Serializer::as_FileOpenExFlag {
     my $self = shift;
     my ($value, $name, $type, $attr) = @_;
-    return [$name, {'xsi:type' => 'vbox:FileOpenExFlags', %$attr}, $value];
+    return [$name, {'xsi:type' => 'vbox:FileOpenExFlag', %$attr}, $value];
 }
 
 sub SOAP::Serializer::as_FileSeekOrigin {
@@ -218,10 +218,10 @@ sub SOAP::Serializer::as_FirmwareType {
     return [$name, {'xsi:type' => 'vbox:FirmwareType', %$attr}, $value];
 }
 
-sub SOAP::Serializer::as_FsObjMoveFlags {
+sub SOAP::Serializer::as_FsObjMoveFlag {
     my $self = shift;
     my ($value, $name, $type, $attr) = @_;
-    return [$name, {'xsi:type' => 'vbox:FsObjMoveFlags', %$attr}, $value];
+    return [$name, {'xsi:type' => 'vbox:FsObjMoveFlag', %$attr}, $value];
 }
 
 sub SOAP::Serializer::as_FsObjRenameFlag {
@@ -234,6 +234,12 @@ sub SOAP::Serializer::as_GraphicsControllerType {
     my $self = shift;
     my ($value, $name, $type, $attr) = @_;
     return [$name, {'xsi:type' => 'vbox:GraphicsControllerType', %$attr}, $value];
+}
+
+sub SOAP::Serializer::as_GuestMonitorStatus {
+    my $self = shift;
+    my ($value, $name, $type, $attr) = @_;
+    return [$name, {'xsi:type' => 'vbox:GuestMonitorStatus', %$attr}, $value];
 }
 
 sub SOAP::Serializer::as_GuestSessionWaitForFlag {
@@ -314,6 +320,12 @@ sub SOAP::Serializer::as_ParavirtProvider {
     return [$name, {'xsi:type' => 'vbox:ParavirtProvider', %$attr}, $value];
 }
 
+sub SOAP::Serializer::as_PartitionTableType {
+    my $self = shift;
+    my ($value, $name, $type, $attr) = @_;
+    return [$name, {'xsi:type' => 'vbox:PartitionTableType', %$attr}, $value];
+}
+
 sub SOAP::Serializer::as_PointingHIDType {
     my $self = shift;
     my ($value, $name, $type, $attr) = @_;
@@ -356,6 +368,48 @@ sub SOAP::Serializer::as_ProcessorFeature {
     return [$name, {'xsi:type' => 'vbox:ProcessorFeature', %$attr}, $value];
 }
 
+sub SOAP::Serializer::as_ProxyMode {
+    my $self = shift;
+    my ($value, $name, $type, $attr) = @_;
+    return [$name, {'xsi:type' => 'vbox:ProxyMode', %$attr}, $value];
+}
+
+sub SOAP::Serializer::as_RecordingAudioCodec {
+    my $self = shift;
+    my ($value, $name, $type, $attr) = @_;
+    return [$name, {'xsi:type' => 'vbox:RecordingAudioCodec', %$attr}, $value];
+}
+
+sub SOAP::Serializer::as_RecordingDestination {
+    my $self = shift;
+    my ($value, $name, $type, $attr) = @_;
+    return [$name, {'xsi:type' => 'vbox:RecordingDestination', %$attr}, $value];
+}
+
+sub SOAP::Serializer::as_RecordingFeature {
+    my $self = shift;
+    my ($value, $name, $type, $attr) = @_;
+    return [$name, {'xsi:type' => 'vbox:RecordingFeature', %$attr}, $value];
+}
+
+sub SOAP::Serializer::as_RecordingVideoCodec {
+    my $self = shift;
+    my ($value, $name, $type, $attr) = @_;
+    return [$name, {'xsi:type' => 'vbox:RecordingVideoCodec', %$attr}, $value];
+}
+
+sub SOAP::Serializer::as_RecordingVideoRateControlMode {
+    my $self = shift;
+    my ($value, $name, $type, $attr) = @_;
+    return [$name, {'xsi:type' => 'vbox:RecordingVideoRateControlMode', %$attr}, $value];
+}
+
+sub SOAP::Serializer::as_RecordingVideoScalingMethod {
+    my $self = shift;
+    my ($value, $name, $type, $attr) = @_;
+    return [$name, {'xsi:type' => 'vbox:RecordingVideoScalingMethod', %$attr}, $value];
+}
+
 sub SOAP::Serializer::as_ScreenLayoutMode {
     my $self = shift;
     my ($value, $name, $type, $attr) = @_;
@@ -396,6 +450,12 @@ sub SOAP::Serializer::as_USBDeviceFilterAction {
     my $self = shift;
     my ($value, $name, $type, $attr) = @_;
     return [$name, {'xsi:type' => 'vbox:USBDeviceFilterAction', %$attr}, $value];
+}
+
+sub SOAP::Serializer::as_UartType {
+    my $self = shift;
+    my ($value, $name, $type, $attr) = @_;
+    return [$name, {'xsi:type' => 'vbox:UartType', %$attr}, $value];
 }
 
 sub SOAP::Serializer::as_VBoxEventType {

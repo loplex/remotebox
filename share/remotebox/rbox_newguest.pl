@@ -12,8 +12,8 @@ sub show_dialog_newguest {
     $gui{radiobuttonNewFixed}->set_sensitive(1);
     $gui{radiobuttonNewSplit}->set_sensitive(0);
     $gui{entryNewName}->set_text('NewGuest' . int(rand(9999)));
-    $gui{spinbuttonNewMemory}->set_range(4, $$vhost{memsize});
-    $gui{spinbuttonNewNewHDSize}->set_range(8.00, int($$vhost{maxhdsize} / 1048576));
+    $gui{spinbuttonNewMemory}->set_range($$vhost{minguestram}, $$vhost{memsize});
+    $gui{spinbuttonNewNewHDSize}->set_range($$vhost{minhdsizemb}, $$vhost{maxhdsizemb});
     $gui{comboboxNewOSFam}->signal_handler_block($signal{fam}); # Block to avoid signal emission when changing
     $gui{comboboxNewOSVer}->signal_handler_block($signal{ver});
     $gui{liststoreNewOSFam}->clear();
@@ -215,7 +215,7 @@ sub create_new_clone {
     elsif ($clonetype eq 'Current') { $IProgress = IMachine_cloneTo($$srcgref{IMachine}, $cloneIMachine, 'MachineState', 'KeepAllMACs'); }
     else { $IProgress = IMachine_cloneTo($$srcgref{IMachine}, $cloneIMachine, 'AllStates', 'KeepAllMACs'); }
 
-    &show_progress_window($IProgress, 'Cloning Guest') if ($IProgress); # MUST NOT USE $cloneIMachine until progress is complete, otherwise it waits
+    &show_progress_window($IProgress, 'Cloning Guest', $gui{img}{ProgressClone}) if ($IProgress); # MUST NOT USE $cloneIMachine until progress is complete, otherwise it waits
 
     if (IProgress_getCanceled($IProgress) eq 'true') {
         &addrow_log('Cancelled guest clone');
@@ -249,6 +249,9 @@ sub create_new_guest {
     my $IMachine = IVirtualBox_createMachine($gui{websn}, '', $$newref{name}, '', $$newref{ver}, 'UUID 00000000-0000-0000-0000-000000000000', '');
 
     if ($IMachine) {
+        # We would like to use this instead of parsing all the defaults but it's
+        # horribly broken in VB
+        # IMachine_applyDefaults($IMachine);
         my $IVRDEServer = IMachine_getVRDEServer($IMachine);
         my $IBIOSSettings = IMachine_getBIOSSettings($IMachine);
         my $IAudioAdapter = IMachine_getAudioAdapter($IMachine);
@@ -308,7 +311,7 @@ sub create_new_hd {
     $ext = $$newref{imgformat} unless ($$newref{imgformat} eq 'parallels');
     my $IMedium = IVirtualBox_createMedium($gui{websn}, $$newref{imgformat}, &rcatfile($$newref{location}, "$$newref{diskname}.$ext"), 'ReadWrite', 'HardDisk');
     my $IProgress = IMedium_createBaseStorage($IMedium, $$newref{size}, $$newref{allocation});
-    &show_progress_window($IProgress, 'Creating Hard Disk');
+    &show_progress_window($IProgress, 'Creating Hard Disk', $gui{img}{ProgressMediaCreate});
 
     if (IProgress_getCanceled($IProgress) eq 'true') {
         &addrow_log("Cancelled hard disk creation");

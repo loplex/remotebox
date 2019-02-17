@@ -1,12 +1,12 @@
 # Main Entry for RemoteBox
 use strict;
 use warnings;
-our (%gui, %prefs, $sharedir, $docdir);
+our (%gui, %prefs, $docdir);
 my %cmdopts=();
 
 $endpoint = 'http://localhost:18083';
 $fault = sub{}; # Do nothing with faults until connected
-&rbprefs_get();
+&rbprefs_get(); # Retrieve and set preferences
 &restore_window_pos('windowMain');
 &addrow_log("Welcome to $gui{appname} $gui{appver}");
 getopts("H:u:p:h", \%cmdopts);
@@ -90,7 +90,7 @@ sub virtualbox_logoff {
 # Fill in the fields when a profile is selected
 sub select_profile {
     my ($widget) = @_;
-    # For some reason this fires when deleting a profile from the profile manage.
+    # For some reason this fires when deleting a profile from the profile manager.
     my $model = $widget->get_model();
     my $iter = $widget->get_active_iter();
     my @row = $model->get($iter) if ($iter and $model);
@@ -117,7 +117,7 @@ sub show_dialog_connect {
         $gui{entryConnectPassword}->set_text($cmdopts{p}) if ($cmdopts{p});
 
         $response = 'ok';
-        &addrow_log("Attempting a command line based automatic login to $endpoint");
+        &addrow_log("Attempting a command line based automatic login to $cmdopts{H}");
     }
     elsif ($widget eq 'PROFAUTO') {
         my $model = $gui{treeviewConnectionProfiles}->get_model();
@@ -130,7 +130,7 @@ sub show_dialog_connect {
                 $gui{entryConnectUser}->set_text($row[2]);
                 $gui{entryConnectPassword}->set_text($row[3]);
                 $response = 'ok';
-                &addrow_log("Attempting a profile based automatic login to $endpoint");
+                &addrow_log("Attempting a profile based automatic login to $row[1]");
                 last;
             }
             $iter = $model->iter_next($iter);
@@ -168,7 +168,7 @@ sub show_dialog_connect {
                 &addrow_log("Logged onto $endpoint");
                 &addrow_log("Running VirtualBox $ver.");
                 my $vhost = &vhost();
-                &show_err_msg('vboxver', "Detected VirtualBox Version: $ver") if ($ver !~ m/^5.2/);
+                &show_err_msg('vboxver', "Detected VirtualBox Version: $ver") if ($ver !~ m/^6.0/);
 
                 if ($$vhost{vrdeextpack} =~ m/Oracle VM VirtualBox Extension Pack/i) { $gui{toolbuttonRemoteDisplay}->set_label('_Guest Display (RDP)'); }
                 elsif ($$vhost{vrdeextpack} =~ m/vnc/i) {
@@ -205,12 +205,7 @@ sub show_dialog_videohint {
     $gui{spinbuttonCustomVideoH}->set_value($prefs{AUTOHINTDISPY});
     $gui{dialogCustomVideo}->run;
     $gui{dialogCustomVideo}->hide;
-
-    my %res = (w => int($gui{spinbuttonCustomVideoW}->get_value()),
-               h => int($gui{spinbuttonCustomVideoH}->get_value()),
-               d => &getsel_combo($gui{comboboxCustomVideoD}, 1));
-
-    return %res;
+    return [$gui{spinbuttonCustomVideoW}->get_value_as_int(), $gui{spinbuttonCustomVideoH}->get_value_as_int(), &getsel_combo($gui{comboboxCustomVideoD}, 1)];
 }
 
 # Shows a dialog with basic information about the VirtualBox server
@@ -229,6 +224,48 @@ sub show_dialog_log {
     $gui{dialogLog}->set_title("$$gref{Name} Guest Logs");
     $gui{dialogLog}->run;
     $gui{dialogLog}->hide;
+}
+
+# Saves a guest log to a text file. EOL encoding depends on server
+sub log_save {
+    my $gref = &getsel_list_guest();
+    my $lognum = $gui{notebookLog}->get_current_page(); # We choose the log number by the page number
+    $gui{filechooserLog}->set_current_name("$$gref{Name}_log$lognum" . '.txt');
+    $gui{filechooserLog}->set_current_folder($ENV{HOME}) if ($ENV{HOME});
+    my $response = $gui{filechooserLog}->run();
+    $gui{filechooserLog}->hide();
+    my $logfile = $gui{filechooserLog}->get_filename();
+
+    if ($response eq 'ok' and $logfile) {
+        &busy_pointer($gui{dialogLog}, 1);
+        my $log;
+        my $offset = 0;
+        &addrow_log("Attempting to save guest log $logfile");
+
+        if (IMachine_queryLogFilename($$gref{IMachine}, $lognum)) {
+            # Reading logs is limited to a maximum chunk size - normally 32K. The chunks are base64 encoded so we
+            # need to read a chunk, decode, calculate next offset. Limit loop to 40 runs (max 1MB retrieval)
+            for (1..40) {
+                my $chunk = IMachine_readLog($$gref{IMachine}, $lognum, $offset, 32768); # Request 32K max. Limit is usually 32K anyway
+                last if (!$chunk); # Terminate loop if we've reached the end or log is empty
+                $log .= decode_base64($chunk); # Chunk is base64 encoded. Append to log
+                $offset = length($log); # Set next offset into log to get the next chunk
+            }
+
+            if ($log) {
+                if (open(LOG, '>', $logfile)) {
+                    print(LOG $log);
+                    close(LOG);
+                    &addrow_log("Guest log $logfile saved");
+                }
+                else { &show_err_msg('logsavefailed', "\nFile: $logfile\nError: $!"); }
+            }
+            else { &show_err_msg('logempty'); }
+        }
+        else { &show_err_msg('logempty'); }
+
+        &busy_pointer($gui{dialogLog}, 0);
+    }
 }
 
 # Show the export appliance dialog
@@ -294,9 +331,9 @@ sub show_dialog_exportappl {
                 $iter_s = $gui{textbufferExportApplLicense}->get_start_iter();
                 $iter_e = $gui{textbufferExportApplLicense}->get_end_iter();
                 IVirtualSystemDescription_addDescription($IVirtualSystemDescription, 'License', $gui{textbufferExportApplLicense}->get_text($iter_s, $iter_e, 0), '');
-                my $manifest = ($gui{checkbuttonExportApplManifest}->get_active() == 1) ? 'CreateManifest' : '';
-                my $IProgress = IAppliance_write($IAppliance, &getsel_combo($gui{comboboxExportApplFormat}, 1), $manifest, $location);
-                if ($IProgress) { &show_progress_window($IProgress, "Exporting Appliance $$gref{Name}"); }
+                # Removed to optional manifest creation because API broke in at least with VB 6.0.0. Cannot pass an empty option and no other options are desirable.
+                my $IProgress = IAppliance_write($IAppliance, &getsel_combo($gui{comboboxExportApplFormat}, 1), 'CreateManifest', $location);
+                if ($IProgress) { &show_progress_window($IProgress, "Exporting Appliance $$gref{Name}", $gui{img}{ProgressExport}); }
                 &addrow_log("Exported $$gref{Name} as an appliance to $location");
             }
         }
@@ -380,7 +417,7 @@ sub stop_guest_poweroff {
         my $IConsole = ISession_getConsole($$sref{ISession});
 
         if (my $IProgress = IConsole_powerDown($IConsole)) { # Not cancellable
-            &show_progress_window($IProgress, "Powering off guest $$gref{Name}");
+            &show_progress_window($IProgress, "Powering off guest $$gref{Name}", $gui{img}{ProgressPowerOff});
             &fill_list_guest();
             &addrow_log("Sent power off signal to $$gref{Name}.");
 
@@ -414,7 +451,7 @@ sub stop_guest_savestate {
     if ($$sref{Lock} eq 'Shared') {
 
         if (my $IProgress = IMachine_saveState($$sref{IMachine})) { # Not cancellable
-            &show_progress_window($IProgress, "Saving guest execution state of $$gref{Name}");
+            &show_progress_window($IProgress, "Saving guest execution state of $$gref{Name}", $gui{img}{ProgressStateSave});
             &fill_list_guest();
             &addrow_log("Saved the execution state of $$gref{Name}.");
         }
@@ -455,11 +492,11 @@ sub resume_guest {
 sub start_guest {
     my $gref = &getsel_list_guest();
     my $ISession = IWebsessionManager_getSessionObject($gui{websn});
-    my $IProgress = IMachine_launchVMProcess($$gref{IMachine}, $ISession, 'headless', "");
+    my $IProgress = IMachine_launchVMProcess($$gref{IMachine}, $ISession, 'headless', '');
     my $started = 0;
 
     if ($IProgress) { # Is Cancellable
-        my $resultcode = &show_progress_window($IProgress, "Starting guest $$gref{Name}");
+        my $resultcode = &show_progress_window($IProgress, "Starting guest $$gref{Name}", $gui{img}{ProgressStart});
 
         if (IProgress_getCanceled($IProgress) eq 'true') { &addrow_log("Cancelled starting guest $$gref{Name}"); }
         elsif ( $resultcode != 0) {
@@ -528,7 +565,7 @@ sub remove_guest {
 
         foreach my $medium (@IMedium) { # Is cancellable
             my $IProgress = IMachine_deleteConfig($$gref{IMachine}, $medium);
-            &show_progress_window($IProgress, 'Deleting hard disk image');
+            &show_progress_window($IProgress, 'Deleting hard disk image', $gui{img}{ProgressMediaDelete});
             if (IProgress_getCanceled($IProgress) eq 'true') { &addrow_log("Cancelled hard disk deletion"); }
         }
 
@@ -546,7 +583,7 @@ sub restore_snapshot {
     if ($$sref{Type} eq 'WriteLock') { # Not cancellable
         my $snapref = &getsel_list_snapshots();
         my $IProgress = IMachine_restoreSnapshot($$sref{IMachine}, $$snapref{ISnapshot});
-        &show_progress_window($IProgress, 'Restoring snapshot');
+        &show_progress_window($IProgress, 'Restoring snapshot', $gui{img}{ProgressSnapshotRestore});
         &addrow_log("Snapshot of $$gref{Name} restored.");
     }
     else { &show_err_msg('restorefail', " ($$gref{Name})"); }
@@ -567,7 +604,7 @@ sub delete_snapshot {
         else { # Not cancellable
             my $snapuuid = ISnapshot_getId($$snapref{ISnapshot});
             my $IProgress = IMachine_deleteSnapshot($$sref{IMachine}, $snapuuid);
-            &show_progress_window($IProgress, 'Deleting snapshot') if ($IProgress);
+            &show_progress_window($IProgress, 'Deleting snapshot', $gui{img}{ProgressSnapshotDiscard}) if ($IProgress);
             &addrow_log("Snapshot of $$gref{Name} deleted.");
         }
     }
@@ -586,7 +623,7 @@ sub take_snapshot {
 
     if ($$sref{Lock} ne 'None') { # Not cancellable
         my ($snapid, $IProgress) = IMachine_takeSnapshot($$sref{IMachine}, $name, $description, 'true');
-        &show_progress_window($IProgress, 'Taking snapshot') if ($IProgress);
+        &show_progress_window($IProgress, 'Taking snapshot', $gui{img}{ProgressSnapshotCreate}) if ($IProgress);
         &addrow_log("Created a new snapshot of $$gref{Name}.");
     }
     else { &show_err_msg('snapshotfail', " ($$gref{Name})"); }
@@ -646,128 +683,6 @@ sub open_remote_display {
     ISession_unlockMachine($$sref{ISession}) if (ISession_getState($$sref{ISession}) eq 'Locked');
 }
 
-# Virtualization Host Specification
-# Won't change much and this way gets populated on first access
-# These subs should not be called when disconnected from the server
-{
-    my %vhost;
-
-    sub vhost {
-        &init_vhost() if (!%vhost);
-        return \%vhost;
-    }
-
-    # Invalidate vhost to force a new retrieve
-    sub clr_vhost { %vhost = (); }
-
-    sub init_vhost {
-        my $IHost = IVirtualBox_getHost($gui{websn});
-        my $ISystemProperties = IVirtualBox_getSystemProperties($gui{websn});
-        %vhost = (ISystemProperties => $ISystemProperties,
-                  IHost             => $IHost,
-                  vbver             => IVirtualBox_getVersion($gui{websn}),
-                  buildrev          => IVirtualBox_getRevision($gui{websn}),
-                  pkgtype           => IVirtualBox_getPackageType($gui{websn}),
-                  settingsfile      => IVirtualBox_getSettingsFilePath($gui{websn}),
-                  os                => IHost_getOperatingSystem($IHost),
-                  osver             => IHost_getOSVersion($IHost),
-                  maxhostcpuon      => IHost_getProcessorOnlineCount($IHost),
-                  cpudesc           => IHost_getProcessorDescription($IHost),
-                  cpuspeed          => IHost_getProcessorSpeed($IHost),
-                  memsize           => IHost_getMemorySize($IHost),
-                  pae               => IHost_getProcessorFeature($IHost, 'PAE'),
-                  vtx               => IHost_getProcessorFeature($IHost, 'HWVirtEx'),
-                  machinedir        => ISystemProperties_getDefaultMachineFolder($ISystemProperties),
-                  maxhdsize         => ISystemProperties_getInfoVDSize($ISystemProperties),
-                  maxnet            => ISystemProperties_getMaxNetworkAdapters($ISystemProperties, 'PIIX3'),
-                  maxser            => ISystemProperties_getSerialPortCount($ISystemProperties),
-                  minguestcpu       => ISystemProperties_getMinGuestCPUCount($ISystemProperties),
-                  maxguestcpu       => ISystemProperties_getMaxGuestCPUCount($ISystemProperties),
-                  minguestram       => ISystemProperties_getMinGuestRAM($ISystemProperties),
-                  maxguestram       => ISystemProperties_getMaxGuestRAM($ISystemProperties),
-                  minguestvram      => ISystemProperties_getMinGuestVRAM($ISystemProperties),
-                  maxguestvram      => ISystemProperties_getMaxGuestVRAM($ISystemProperties),
-                  maxbootpos        => ISystemProperties_getMaxBootPosition($ISystemProperties),
-                  maxmonitors       => ISystemProperties_getMaxGuestMonitors($ISystemProperties),
-                  vrdeextpack       => ISystemProperties_getDefaultVRDEExtPack($ISystemProperties),
-                  vrdelib           => ISystemProperties_getVRDEAuthLibrary($ISystemProperties),
-                  additionsiso      => ISystemProperties_getDefaultAdditionsISO($ISystemProperties),
-                  defaudio          => ISystemProperties_getDefaultAudioDriver($ISystemProperties),
-                  hwexclusive       => ISystemProperties_getExclusiveHwVirt($ISystemProperties),
-                  autostartdb       => ISystemProperties_getAutostartDatabasePath($ISystemProperties));
-
-        # Obtain any physical DVD drives
-        my @dvd = IHost_getDVDDrives($IHost);
-        $vhost{dvd} = \@dvd;
-
-        # Ontain any physical floppy drives
-        my @floppy = IHost_getFloppyDrives($IHost);
-        $vhost{floppy} = \@floppy;
-    }
-}
-
-# Initialise a structure contain operating system details supported
-# by the virtualbox server
-{
-    my %osfam;
-    my %osver;
-
-    sub osfam {
-        &init_oslist() if (!%osfam);
-        return \%osfam;
-    }
-
-    sub osver {
-        &init_oslist() if (!%osver);
-        return \%osver;
-    }
-
-    sub osfamver { return &osfam(), &osver(); }
-
-    sub init_oslist {
-        my @IGuestOSType = IVirtualBox_getGuestOSTypes($gui{websn});
-        foreach my $type (@IGuestOSType) {
-            if (!defined($osfam{$$type{familyId}})) {
-                $osfam{$$type{familyId}} = {};
-                $osfam{$$type{familyId}}{verids} = ();
-                $osfam{$$type{familyId}}{icon} = Gtk2::Gdk::Pixbuf->new_from_file("$sharedir/icons/os/$$type{familyId}.png");
-            }
-
-            $osfam{$$type{familyId}}{description} = $$type{familyDescription};
-            push @{ $osfam{$$type{familyId}}{verids} }, $$type{id};
-            $osver{$$type{id}} = {} if (!defined($osver{$$type{id}}));
-            $osver{$$type{id}}{description} = $$type{description};
-            $osver{$$type{id}}{adapterType} = $$type{adapterType};
-            $osver{$$type{id}}{recommendedHDD} = $$type{recommendedHDD};
-            $osver{$$type{id}}{recommendedFloppy} = $$type{recommendedFloppy};
-            $osver{$$type{id}}{is64Bit} = $$type{is64Bit};
-            $osver{$$type{id}}{recommendedVirtEx} = $$type{recommendedVirtEx};
-            $osver{$$type{id}}{recommendedIOAPIC} = $$type{recommendedIOAPIC};
-            $osver{$$type{id}}{recommendedVRAM} = $$type{recommendedVRAM};
-            $osver{$$type{id}}{recommendedRAM} = $$type{recommendedRAM};
-            $osver{$$type{id}}{recommendedHPET} = $$type{recommendedHPET};
-            $osver{$$type{id}}{recommendedUSB} = $$type{recommendedUSB};
-            $osver{$$type{id}}{recommendedUSBHID} = $$type{recommendedUSBHID};
-            $osver{$$type{id}}{recommendedVirtEx} = $$type{recommendedVirtEx};
-            $osver{$$type{id}}{recommendedPAE} = $$type{recommendedPAE};
-            $osver{$$type{id}}{recommendedUSBTablet} = $$type{recommendedUSBTablet};
-            $osver{$$type{id}}{recommendedHDStorageBus} = $$type{recommendedHDStorageBus};
-            $osver{$$type{id}}{recommendedChipset} = $$type{recommendedChipset};
-            $osver{$$type{id}}{recommendedFirmware} = $$type{recommendedFirmware};
-            $osver{$$type{id}}{recommendedDVDStorageBus} = $$type{recommendedDVDStorageBus};
-            $osver{$$type{id}}{recommendedHDStorageController} = $$type{recommendedHDStorageController};
-            $osver{$$type{id}}{recommendedDVDStorageController} = $$type{recommendedDVDStorageController};
-            $osver{$$type{id}}{recommendedRTCUseUTC} = $$type{recommendedRTCUseUTC};
-            $osver{$$type{id}}{recommended2DVideoAcceleration} = $$type{recommended2DVideoAcceleration};
-            $osver{$$type{id}}{recommendedAudioController} = $$type{recommendedAudioController};
-            $osver{$$type{id}}{familyId} = $$type{familyId};
-            if (-e "$sharedir/icons/os/$$type{id}.png") { $osver{$$type{id}}{icon} = Gtk2::Gdk::Pixbuf->new_from_file("$sharedir/icons/os/$$type{id}.png"); }
-            elsif ($$type{id} =~ m/_64$/) { $osver{$$type{id}}{icon} = $gui{img}{OtherOS64}; }
-            else { $osver{$$type{id}}{icon} = $gui{img}{OtherOS}; }
-        }
-    }
-}
-
 # Displays a popup machine menu on the guest list when the right mouse button is pressed
 sub show_rmb_menu {
     my ($widget, $event) = @_;
@@ -775,7 +690,7 @@ sub show_rmb_menu {
     # Check if it's the RMB otherwise do nothing
     if ($event->button == 3) {
         # This code is needed because if the user just presses the RMB, then GTK has not updated the
-        # location of the cursor until AFTER this routine is complete meaning will be referencing the
+        # location of the cursor until AFTER this routine is complete meaning we will be referencing the
         # wrong VM. We need to force a cursor update first.
         my $path = $gui{treeviewGuest}->get_path_at_pos(int($event->x), int($event->y));
         if ($path) {
@@ -842,9 +757,9 @@ sub fill_menu_usb {
         foreach my $IUSBDevice (@USBDevices) { $connected{IUSBDevice_getId($IUSBDevice)} = 1; }
 
         foreach my $usb (@IHostUSBDevices) {
-            my $label = &usb_makelabel(IUSBDevice_getManufacturer($usb),
-                                       IUSBDevice_getProduct($usb),
-                                       sprintf('%04x', IUSBDevice_getRevision($usb)));
+            my $label = &usb_make_label(IUSBDevice_getManufacturer($usb),
+                                        IUSBDevice_getProduct($usb),
+                                        sprintf('%04x', IUSBDevice_getRevision($usb)));
 
             my $item = Gtk2::CheckMenuItem->new_with_label($label);
             my $usbid = IUSBDevice_getId($usb);
@@ -1040,149 +955,41 @@ sub keyboard_releasekeys {
     ISession_unlockMachine($$sref{ISession}) if (ISession_getState($$sref{ISession}) eq 'Locked');
 }
 
+# Sends a sequence of keyboard scan codes depending on the option chosen
 sub keyboard_send {
-    my ($widget) = @_;
+    my ($widget, $scancodes) = @_;
     my $gref = &getsel_list_guest();
     my $sref = &get_session($$gref{IMachine});
-    my $sequence;
-    my @scancodes;
-
-    if ($widget eq $gui{menuitemKeyboardCAF1}) {
-        $sequence = 'Ctrl-Alt-F1';
-        @scancodes = (29, 56, 59, 157, 184, 187);
-    }
-    elsif ($widget eq $gui{menuitemKeyboardCAF2}) {
-        $sequence = 'Ctrl-Alt-F2';
-        @scancodes = (29, 56, 60, 157, 184, 188);
-    }
-    elsif ($widget eq $gui{menuitemKeyboardCAF3}) {
-        $sequence = 'Ctrl-Alt-F3';
-        @scancodes = (29, 56, 61, 157, 184, 189);
-    }
-    elsif ($widget eq $gui{menuitemKeyboardCAF4}) {
-        $sequence = 'Ctrl-Alt-F4';
-        @scancodes = (29, 56, 62, 157, 184, 190);
-    }
-    elsif ($widget eq $gui{menuitemKeyboardCAF5}) {
-        $sequence = 'Ctrl-Alt-F5';
-        @scancodes = (29, 56, 63, 157, 184, 191);
-    }
-    elsif ($widget eq $gui{menuitemKeyboardCAF6}) {
-        $sequence = 'Ctrl-Alt-F6';
-        @scancodes = (29, 56, 64, 157, 184, 192);
-    }
-    elsif ($widget eq $gui{menuitemKeyboardCAF7}) {
-        $sequence = 'Ctrl-Alt-F7';
-        @scancodes = (29, 56, 65, 157, 184, 193);
-    }
-    elsif ($widget eq $gui{menuitemKeyboardCAF8}) {
-        $sequence = 'Ctrl-Alt-F8';
-        @scancodes = (29, 56, 66, 157, 184, 194);
-    }
-    elsif ($widget eq $gui{menuitemKeyboardCAF9}) {
-        $sequence = 'Ctrl-Alt-F9';
-        @scancodes = (29, 56, 67, 157, 184, 195);
-    }
-    elsif ($widget eq $gui{menuitemKeyboardCAF10}) {
-        $sequence = 'Ctrl-Alt-F10';
-        @scancodes = (29, 56, 68, 157, 184, 196);
-    }
-    elsif ($widget eq $gui{menuitemKeyboardCAF11}) {
-        $sequence = 'Ctrl-Alt-F11';
-        @scancodes = (29, 56, 87, 157, 184, 215);
-    }
-    elsif ($widget eq $gui{menuitemKeyboardCAF12}) {
-        $sequence = 'Ctrl-Alt-F12';
-        @scancodes = (29, 56, 88, 157, 184, 216);
-    }
-    elsif ($widget eq $gui{menuitemKeyboardASF1}) {
-        $sequence = 'Alt-SysRq+F1';
-        @scancodes = (56, 84, 184, 212, 59, 187); # Actually sends Alt-SysRq THEN F1
-    }
-    elsif ($widget eq $gui{menuitemKeyboardASF2}) {
-        $sequence = 'Alt-SysRq+F2';
-        @scancodes = (56, 84, 184, 212, 60, 188); # Actually sends Alt-SysRq THEN F2
-    }
-    elsif ($widget eq $gui{menuitemKeyboardASF3}) {
-        $sequence = 'Alt-SysRq+F3';
-        @scancodes = (56, 84, 184, 212, 61, 189); # Actually sends Alt-SysRq THEN F3
-    }
-    elsif ($widget eq $gui{menuitemKeyboardASF4}) {
-        $sequence = 'Alt-SysRq+F4';
-        @scancodes = (56, 84, 184, 212, 62, 190); # Actually sends Alt-SysRq THEN F4
-    }
-    elsif ($widget eq $gui{menuitemKeyboardASF5}) {
-        $sequence = 'Alt-SysRq+F5';
-        @scancodes = (56, 84, 184, 212, 63, 191); # Actually sends Alt-SysRq THEN F5
-    }
-    elsif ($widget eq $gui{menuitemKeyboardASF6}) {
-        $sequence = 'Alt-SysRq+F6';
-        @scancodes = (56, 84, 184, 212, 64, 192); # Actually sends Alt-SysRq THEN F6
-    }
-    elsif ($widget eq $gui{menuitemKeyboardASF7}) {
-        $sequence = 'Alt-SysRq+F7';
-        @scancodes = (56, 84, 184, 212, 65, 193); # Actually sends Alt-SysRq THEN F7
-    }
-    elsif ($widget eq $gui{menuitemKeyboardASF8}) {
-        $sequence = 'Alt-SysRq+F8';
-        @scancodes = (56, 84, 184, 212, 66, 194); # Actually sends Alt-SysRq THEN F8
-    }
-    elsif ($widget eq $gui{menuitemKeyboardASH}) {
-        $sequence = 'Alt-SysRq+H';
-        @scancodes = (56, 84, 184, 212, 35, 163); # Actually sends Alt-SysRq THEN H
-    }
-    elsif ($widget eq $gui{menuitemKeyboardCABS} or $widget eq $gui{menuitemKeyboardMiniCABS}) {
-        $sequence = 'Ctrl-Alt-Backspace';
-        @scancodes = (29, 56, 14, 157, 184, 142);
-    }
-    elsif ($widget eq $gui{menuitemKeyboardCTRLC} or $widget eq $gui{menuitemKeyboardMiniCTRLC}) {
-        $sequence = 'Ctrl-C';
-        @scancodes = (29, 46, 157, 174);
-    }
-    elsif ($widget eq $gui{menuitemKeyboardCTRLD} or $widget eq $gui{menuitemKeyboardMiniCTRLD}) {
-        $sequence = 'Ctrl-D';
-        @scancodes = (29, 32, 157, 160);
-    }
 
     if ($$sref{IMachine}) {
         my $IKeyboard = IConsole_getKeyboard(ISession_getConsole($$sref{ISession}));
-        IKeyboard_putScancode($IKeyboard, $_) foreach (@scancodes);
-        &addrow_log("Keyboard sequence $sequence sent to $$gref{Name}.");
+        IKeyboard_putScancode($IKeyboard, $_) foreach (@{$$scancodes{codes}});
+        &addrow_log("Keyboard sequence $$scancodes{desc} sent to $$gref{Name}.");
     }
 
     ISession_unlockMachine($$sref{ISession}) if (ISession_getState($$sref{ISession}) eq 'Locked');
 }
 
+# Updates the video memory requirement when choosing a custom video hint
 sub update_vidmeminfo {
-    my $w = int($gui{spinbuttonCustomVideoW}->get_value());
-    my $h = int($gui{spinbuttonCustomVideoH}->get_value());
+    my $w = $gui{spinbuttonCustomVideoW}->get_value_as_int();
+    my $h = $gui{spinbuttonCustomVideoH}->get_value_as_int();
     my $d = &getsel_combo($gui{comboboxCustomVideoD}, 1);
-
-    my $vidmem = ceil(($w * $h * $d) / 8388608);
-    $gui{labelCustomVideoInfo}->set_text("This resolution requires $vidmem MB of Video RAM");
+    $gui{labelCustomVideoInfo}->set_text('This resolution requires a minimum of ' . &vram_needed($w, $h, $d) . "MB of video memory");
 }
 
 # Sends a video mode hint to the guest
 sub send_video_hint {
-    my ($widget) = @_;
+    my ($widget, $res) = @_;
     my $gref = &getsel_list_guest();
     my $sref = &get_session($$gref{IMachine});
-    my %res = (w => 640,
-               h => 480,
-               d => 32);
 
-    if ($widget eq $gui{menuitemSetVideo2}) { %res = (w => 1024, h => 768, d => 32); }
-    elsif ($widget eq $gui{menuitemSetVideo3}) { %res = (w => 1280, h => 1024, d => 32); }
-    elsif ($widget eq $gui{menuitemSetVideo4}) { %res = (w => 1400, h => 1050, d => 32); }
-    elsif ($widget eq $gui{menuitemSetVideo5}) { %res = (w => 1600, h => 1200, d => 32); }
-    elsif ($widget eq $gui{menuitemSetVideo6}) { %res = (w => 1440, h => 900, d => 32); }
-    elsif ($widget eq $gui{menuitemSetVideo8}) { %res = (w => 1920, h => 1200, d => 32); }
-    elsif ($widget eq $gui{menuitemSetVideoCustom}) { %res = &show_dialog_videohint(); }
+    if ($widget eq $gui{menuitemSetVideoCustom}) { $res = &show_dialog_videohint(); }
 
     if ($$sref{IMachine}) {
         my $IConsole = ISession_getConsole($$sref{ISession});
-        IDisplay_setVideoModeHint(IConsole_getDisplay($IConsole), 0, 1, 0, 0, 0, $res{w}, $res{h}, $res{d});
-        &addrow_log("Sent video hint ($res{w}x$res{h}:$res{d}) to $$gref{Name}.");
+        IDisplay_setVideoModeHint(IConsole_getDisplay($IConsole), 0, 1, 0, 0, 0, $$res[0], $$res[1], $$res[2]);
+        &addrow_log("Sent video hint ($$res[0]x$$res[1]:$$res[2]) to $$gref{Name}.");
     }
 
     ISession_unlockMachine($$sref{ISession}) if (ISession_getState($$sref{ISession}) eq 'Locked');
@@ -1201,8 +1008,6 @@ sub get_all_media {
     $media{$_} = IMedium_getName($_) foreach (@IMedium);
     return \%media;
 }
-
-
 
 # Return an appropriate session
 sub get_session {
@@ -1258,24 +1063,6 @@ sub encrypt_disk {
     return 0;
 }
 
-# Expects a hash reference as an input and populates the hash with IMedium
-# attributes, if that attribute has already been defined. The second argument
-# is the IMedium virtualbox reference
-sub get_imedium_attrs {
-    my ($href, $IMedium) = @_;
-    return unless $IMedium;
-    $$href{IMedium} = $IMedium; # For convenience
-    $$href{refresh} = IMedium_refreshState($IMedium) if ($$href{refresh}); # Tell VM to get latest info on media (ie file size)
-    $$href{accesserr} = IMedium_getLastAccessError($IMedium) if ($$href{accesserr});
-    $$href{name} = IMedium_getName($IMedium) if ($$href{name});
-    $$href{size} = IMedium_getSize($IMedium) if ($$href{size}); # Physical size in bytes
-    $$href{logsize} = IMedium_getLogicalSize($IMedium) if ($$href{logsize}); # Logical size in bytes
-    $$href{machineids} = [IMedium_getMachineIds($IMedium)] if ($$href{machineids}); # Machine IDs associated with media
-    $$href{children} = [IMedium_getChildren($IMedium)] if ($$href{children}); # Children of media
-    $$href{location} = IMedium_getLocation($IMedium) if ($$href{location}); # Disk location of medium
-    $$href{type} = IMedium_getType($IMedium) if ($$href{type}); # Get the medium type
-}
-
 # Returns whether the IMedium object has a particular property.
 # uses getProperties to avoid VirtualBox from issuing an error when
 # other methods would.
@@ -1285,18 +1072,6 @@ sub imedium_has_property {
     return (grep($property, @properties));
 }
 
-# Expects a hash reference as an input and populates the hash with IStorageController
-# attributes, if that attribute has already been defined. The second argument
-# is the IStorageController virtualbox reference
-sub get_icontroller_attrs {
-    my ($href, $IStorageController) = @_;
-    return unless $IStorageController;
-    $$href{IStorageController} = $IStorageController; # For Convenience
-    $$href{name} = IStorageController_getName($IStorageController) if ($$href{name});
-    $$href{bus} = IStorageController_getBus($IStorageController) if ($$href{bus});
-    $$href{cache} = &bl(IStorageController_getUseHostIOCache($IStorageController)) if ($$href{cache});
-}
-
 # Set sensitivity based on connection state
 sub sens_connect {
     my ($state) = @_;
@@ -1304,6 +1079,7 @@ sub sens_connect {
     $gui{menuitemAdd}->set_sensitive($state);
     $gui{menuitemImportAppl}->set_sensitive($state);
     $gui{menuitemVMM}->set_sensitive($state);
+    $gui{menuitemHostNetMan}->set_sensitive($state);
     $gui{menuitemServerInfo}->set_sensitive($state);
     $gui{menuitemVBPrefs}->set_sensitive($state);
     $gui{toolbuttonNew}->set_sensitive($state);
@@ -1356,7 +1132,6 @@ sub reset_icon {
 # Takes a PNG screenshot of the guest
 sub screenshot {
     my ($widget) = @_;
-
     my $gref = &getsel_list_guest();
     my $sref = &get_session($$gref{IMachine});
     $gui{filechooserscreenshot}->set_current_name("$$gref{Name}_screenshot.png");
@@ -1431,13 +1206,12 @@ sub group_list_collapse {
 
 # Shows the dialog for importing an appliance
 sub show_dialog_importappl {
-
     do {
         my $response = $gui{dialogImportAppl}->run;
 
         if ($response eq 'ok') {
-            my $importopts = '';
-            $importopts = 'ImportToVDI' if ($gui{checkbuttonImportApplToVDI}->get_active());
+            # API broke in at least with VB 6.0.0. You MUST specifiy at least 1 option, so use something harmless-ish. Cannot pass an empty option
+            my $importopts = ($gui{checkbuttonImportApplToVDI}->get_active() == 1) ? 'ImportToVDI': 'KeepAllMACs';
 
             if (!$gui{entryImportApplFile}->get_text()) { &show_err_msg('invalidfile'); }
             else {
@@ -1448,14 +1222,14 @@ sub show_dialog_importappl {
                 my $IProgress = IAppliance_read($IAppliance, $appliancefile);
 
                 if ($IProgress) {
-                    &show_progress_window($IProgress, 'Reading Appliance');
+                    &show_progress_window($IProgress, 'Reading Appliance', $gui{img}{ProgressReadAppl});
                     IAppliance_interpret($IAppliance);
                     my $warnings = IAppliance_getWarnings($IAppliance);
                     &addrow_log("Import warnings: $warnings") if ($warnings);
                     $IProgress = IAppliance_importMachines($IAppliance, $importopts);
 
                     if ($IProgress) {
-                        &show_progress_window($IProgress, 'Importing Appliance') if ($IProgress);
+                        &show_progress_window($IProgress, 'Importing Appliance', $gui{img}{ProgressImport});
                         my @appluuid = IAppliance_getMachines($IAppliance);
                         foreach my $id (@appluuid) {
                             &makesel_list_guest($id); # Make the current selection the new appliance
@@ -1464,9 +1238,9 @@ sub show_dialog_importappl {
                             &show_dialog_edit(); # Edit any settings
                         }
                     }
-                    else { &show_err_msg('applimport', "($appliancefile)"); }
+                    else { &show_err_msg('applimport', "\nAppliance: $appliancefile"); }
                 }
-                else { &show_err_msg('applimport', "($appliancefile)"); }
+                else { &show_err_msg('applimport', "\nAppliance: $appliancefile"); }
             }
         }
         else { $gui{dialogImportAppl}->hide; }
@@ -1488,7 +1262,6 @@ sub show_dialog_decpasswd {
 
     return $passwd;
 }
-
 
 # Displays the dialog for setting a guests group
 sub show_dialog_group {
@@ -1532,7 +1305,7 @@ sub clear_group {
     &busy_pointer($gui{windowMain}, 0);
 }
 
-# Update the server memoru progress bar
+# Update the server memory progress bar
 sub update_server_membar {
     if ($gui{websn}) {
         my $IHost = IVirtualBox_getHost($gui{websn});
@@ -1566,59 +1339,6 @@ sub extended_details {
     &onsel_list_guest() if ($iter);
 }
 
-# Converts bytes into a human readable format with unit
-sub bytesToX {
-    my ($bytes) = @_;
-    my ($unit, $val);
-
-    if ($bytes < 1024) { $val = $bytes; }
-    elsif ($bytes < 1048576) {
-        $unit = 'KB';
-        $val = $bytes / 1024;
-    }
-    elsif ($bytes < 1073741824) {
-        $unit = 'MB';
-        $val = $bytes / 1048576;
-    }
-    elsif ($bytes < 1099511627776) {
-        $unit = 'GB';
-        $val = $bytes / 1073741824;
-    }
-    else {
-        $unit = 'TB';
-        $val = $bytes / 1099511627776;
-    }
-
-    $val = $unit ? sprintf("%0.2f $unit", $val) : $val;
-    return $val;
-}
-
-# Simple XOR with password and key
-sub xor_pass {
-    my ($pass, $key) = @_;
-
-    my $encpass = '';
-    foreach my $char (split //, $pass) {
-        my $decode = chop($key);
-        $encpass .= chr(ord($char) ^ ord($decode));
-        $key = $decode . $key;
-    }
-    return $encpass;
-}
-
-# Returns a random string of printable ASCII characters up to the requested length
-sub random_key {
-    my ($length) = @_;
-    return '' if ($length < 1);
-    my @letters = ('a'..'z', 'A'..'Z', '0'..'9');
-    my $string = '';
-    foreach (1..$length) { $string .= $letters[rand(62)]; }
-    return $string;
-}
-
-sub set_connection_prof_inactive() {
-    $gui{comboboxConnectProfile}->set_active(-1);
-}
-
+sub set_connection_prof_inactive() { $gui{comboboxConnectProfile}->set_active(-1); }
 
 1;
