@@ -5,17 +5,16 @@ os: linux
 addons:
   apt:
     packages:
-    - fakeroot
+    - fakeroot debhelper
 
 script:
     - sh -c 'srcs="$(ls -1A)" && mkdir -p "./build/remotebox" && mv ${srcs} "./build/remotebox/"'
     - cd './build/remotebox'
     - dpkg -l
-    - sudo apt install fakeroot
-    - sudo apt update
-    - sudo apt install fakeroot
+    #- sudo apt install fakeroot
+    3- sudo apt update
+    #- sudo apt install fakeroot
     - dpkg-buildpackage -us -uc
     - find -print0 |xargs -0 ls -ld
     #- ls -alhR
     - ls -l ..
-
